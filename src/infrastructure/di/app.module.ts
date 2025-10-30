@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { PointsModule } from './points.module';
-import { CouponsModule } from './coupons.module';
-import { ProductsModule } from './products.module';
 import { CartsModule } from './carts.module';
+import { CouponsModule } from './coupons.module';
 import { OrdersModule } from './orders.module';
+import { PointsModule } from './points.module';
+import { ProductsModule } from './products.module';
 
 const internalModules = [
   PointsModule,

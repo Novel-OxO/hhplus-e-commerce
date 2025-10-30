@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CartsController } from '../../interfaces/http/carts.controller';
+import { CartsController } from '@interfaces/http/carts.controller';
 
 @Module({
   controllers: [CartsController],

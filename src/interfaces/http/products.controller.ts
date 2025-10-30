@@ -143,10 +143,7 @@ export class ProductsController {
 
   @Get(':id/options/:optionId/stock')
   @ApiGetOptionStock()
-  getOptionStock(
-    @Param('id') id: string,
-    @Param('optionId') optionId: string,
-  ) {
+  getOptionStock(@Param('id') id: string, @Param('optionId') optionId: string) {
     console.log('Get option stock request:', { id, optionId });
     return {
       optionId: parseInt(optionId),
