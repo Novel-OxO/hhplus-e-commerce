@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiChargeRequest, ApiGetBalance, ApiVerifyCharge } from './points.swagger';
+import {
+  ApiChargeRequest,
+  ApiGetBalance,
+  ApiVerifyCharge,
+} from './points.swagger';
 
 @ApiTags('Points')
 @Controller('points')
