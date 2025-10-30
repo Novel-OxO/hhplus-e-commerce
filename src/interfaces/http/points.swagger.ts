@@ -72,6 +72,7 @@ export const ApiVerifyCharge = () =>
     }),
     ApiResponse({
       status: 400,
-      description: '충전 검증 실패 (존재하지 않는 요청, 중복 충전, 금액 불일치 등)',
+      description:
+        '충전 검증 실패 (존재하지 않는 요청, 중복 충전, 금액 불일치 등)',
     }),
   );
