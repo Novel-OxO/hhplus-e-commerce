@@ -4,7 +4,7 @@ import {
   ApiGetMyCoupons,
   ApiGetMyCouponHistory,
   ApiIssueCoupon,
-} from './coupons.swagger';
+} from '@presentation/http/coupons.swagger';
 
 @ApiTags('Coupons')
 @Controller()

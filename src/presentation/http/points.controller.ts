@@ -4,7 +4,7 @@ import {
   ApiChargeRequest,
   ApiGetBalance,
   ApiVerifyCharge,
-} from './points.swagger';
+} from '@presentation/http/points.swagger';
 
 @ApiTags('Points')
 @Controller('points')

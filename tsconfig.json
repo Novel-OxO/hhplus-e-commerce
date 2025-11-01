@@ -18,7 +18,9 @@
       "@/*": ["src/*"],
       "@interfaces/*": ["src/interfaces/*"],
       "@domain/*": ["src/domain/*"],
-      "@infrastructure/*": ["src/infrastructure/*"]
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@presentation/*": ["src/presentation/*"],
+      "@application/*": ["src/application/*"],
     },
     "incremental": true,
     "skipLibCheck": true,

@@ -75,7 +75,7 @@ export default tseslint.config(
               position: 'after',
             },
             {
-              pattern: '@interfaces/**',
+              pattern: '@presentation/**',
               group: 'internal',
               position: 'before',
             },

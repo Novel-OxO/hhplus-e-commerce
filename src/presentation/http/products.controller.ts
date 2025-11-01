@@ -5,7 +5,7 @@ import {
   ApiGetProductOptions,
   ApiGetOptionStock,
   ApiGetPopularProducts,
-} from './products.swagger';
+} from '@presentation/http/products.swagger';
 
 @ApiTags('Products')
 @Controller('products')

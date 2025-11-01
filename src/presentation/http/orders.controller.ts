@@ -4,7 +4,7 @@ import {
   ApiCreateOrder,
   ApiGetOrder,
   ApiUpdateOrderStatus,
-} from './orders.swagger';
+} from '@presentation/http/orders.swagger';
 
 @ApiTags('Orders')
 @Controller('orders')

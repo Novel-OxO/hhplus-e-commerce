@@ -5,7 +5,7 @@ import {
   ApiGetCart,
   ApiDeleteCartItem,
   ApiClearCart,
-} from './carts.swagger';
+} from '@presentation/http/carts.swagger';
 
 @ApiTags('Carts')
 @Controller('carts')
