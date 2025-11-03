@@ -5,13 +5,7 @@ import { OrdersModule } from './orders.module';
 import { PointsModule } from './points.module';
 import { ProductsModule } from './products.module';
 
-const internalModules = [
-  PointsModule,
-  CouponsModule,
-  ProductsModule,
-  CartsModule,
-  OrdersModule,
-];
+const internalModules = [PointsModule, CouponsModule, ProductsModule, CartsModule, OrdersModule];
 
 @Module({
   imports: [...internalModules],
