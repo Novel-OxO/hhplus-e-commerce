@@ -8,6 +8,11 @@ export class OrderMemoryRepository implements OrderRepository {
   private orders: Map<string, Order> = new Map();
   private orderItems: Map<string, OrderItem> = new Map();
 
+  clear(): void {
+    this.orders.clear();
+    this.orderItems.clear();
+  }
+
   save(order: Order): Promise<Order> {
     this.orders.set(order.getId(), order);
     return Promise.resolve(order);
