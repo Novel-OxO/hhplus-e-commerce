@@ -25,7 +25,9 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.0.1",
     "@nestjs/swagger": "^11.2.1",
+    "async-mutex": "^0.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -75,9 +77,15 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "src/**/*.(t|j)s",
+      "src/presentation/**/*.(t|j)s",
+      "src/application/**/*.(t|j)s",
+      "src/domain/**/*.(t|j)s",
+      "src/infrastructure/**/*.(t|j)s",
       "!src/**/*.spec.ts",
-      "!src/main.ts"
+      "!src/main.ts",
+      "!src/**/dto/**",
+      "!src/**/*.dto.ts",
+      "!src/infrastructure/di/app.module.ts"
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
