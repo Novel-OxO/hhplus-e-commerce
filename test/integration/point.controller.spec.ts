@@ -2,33 +2,38 @@ import { Server } from 'http';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserMutexService } from '@/application/user-mutex.service';
+import { PaymentStatus } from '@/domain/payment/payment-status.vo';
+import { PG_CLIENT } from '@/domain/payment/pg-client.interface';
+import { ConcurrencyModule } from '@/infrastructure/di/concurrency.module';
 import { PointsModule } from '@/infrastructure/di/points.module';
+import { MockPGClient } from '@/infrastructure/external/mock-pg-client';
 import {
   ChargeRequestResponseDto,
   GetBalanceResponseDto,
   VerifyChargeResponseDto,
 } from '@/presentation/http/point/dto/point-response.dto';
-import { PaymentStatus } from '@/domain/payment/payment-status.vo';
-import { PG_CLIENT } from '@/domain/payment/pg-client.interface';
-import { MockPGClient } from '@/infrastructure/external/mock-pg-client';
 
 describe('PointsController (Integration)', () => {
   let app: INestApplication<Server>;
   let mockPGClient: MockPGClient;
+  let userMutexService: UserMutexService;
   // https://github.com/nestjs/nest/issues/13191 supertest nestjs type 이슈
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [PointsModule],
+      imports: [ConcurrencyModule, PointsModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
 
     mockPGClient = moduleFixture.get<MockPGClient>(PG_CLIENT);
+    userMutexService = moduleFixture.get<UserMutexService>(UserMutexService);
   });
 
   afterEach(async () => {
     mockPGClient.clearPayments();
+    userMutexService.stopCleanup();
     await app.close();
   });
 

@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ProductRankingService } from '@/application/product-ranking.service';
 import { ProductService } from '@/application/product.service';
+import { NotFoundException } from '@/common/exceptions';
 import { ProductOption } from '@/domain/product/product-option.entity';
 import { Product } from '@/domain/product/product.entity';
 import { PRODUCT_REPOSITORY, type ProductRepository } from '@/domain/product/product.repository';
-import { NotFoundException } from '@/common/exceptions';
+import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 
 describe('ProductService', () => {
   let service: ProductService;
@@ -18,7 +20,23 @@ describe('ProductService', () => {
       saveOption: jest.fn(),
       findOptionByIdWithLock: jest.fn(),
       saveProduct: jest.fn(),
+      saveViewLog: jest.fn(),
+      findOrCreateDailyView: jest.fn(),
+      saveDailyView: jest.fn(),
+      findDailyViewsByPeriod: jest.fn(),
+      findAllDailyViewsByPeriod: jest.fn(),
+      saveRanking: jest.fn(),
+      findTopRankings: jest.fn(),
     };
+
+    const mockIdGenerator: jest.Mocked<IdGenerator> = {
+      generate: jest.fn(),
+    };
+
+    const mockRankingService: jest.Mocked<ProductRankingService> = {
+      calculateRankings: jest.fn(),
+      getTopRankings: jest.fn(),
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -26,6 +44,14 @@ describe('ProductService', () => {
         {
           provide: PRODUCT_REPOSITORY,
           useValue: mockRepository,
+        },
+        {
+          provide: ID_GENERATOR,
+          useValue: mockIdGenerator,
+        },
+        {
+          provide: ProductRankingService,
+          useValue: mockRankingService,
         },
       ],
     }).compile();

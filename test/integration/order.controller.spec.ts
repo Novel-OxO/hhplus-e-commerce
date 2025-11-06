@@ -2,6 +2,7 @@ import { Server } from 'http';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserMutexService } from '@/application/user-mutex.service';
 import { CouponQuantity } from '@/domain/coupon/coupon-quantity.vo';
 import { Coupon } from '@/domain/coupon/coupon.entity';
 import { COUPON_REPOSITORY, CouponRepository } from '@/domain/coupon/coupon.repository';
@@ -14,6 +15,7 @@ import { POINT_REPOSITORY, PointRepository } from '@/domain/point/point.reposito
 import { Point } from '@/domain/point/point.vo';
 import { ProductOption } from '@/domain/product/product-option.entity';
 import { PRODUCT_REPOSITORY, ProductRepository } from '@/domain/product/product.repository';
+import { ConcurrencyModule } from '@/infrastructure/di/concurrency.module';
 import { OrdersModule } from '@/infrastructure/di/orders.module';
 import { CreateOrderResponseDto } from '@/presentation/http/order/dto/create-order.dto';
 import { GetOrderResponseDto } from '@/presentation/http/order/dto/get-order.dto';
@@ -24,10 +26,11 @@ describe('OrdersController (Integration)', () => {
   let productRepository: ProductRepository;
   let pointRepository: PointRepository;
   let couponRepository: CouponRepository;
+  let userMutexService: UserMutexService;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [OrdersModule],
+      imports: [ConcurrencyModule, OrdersModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -36,11 +39,13 @@ describe('OrdersController (Integration)', () => {
     productRepository = moduleFixture.get<ProductRepository>(PRODUCT_REPOSITORY);
     pointRepository = moduleFixture.get<PointRepository>(POINT_REPOSITORY);
     couponRepository = moduleFixture.get<CouponRepository>(COUPON_REPOSITORY);
+    userMutexService = moduleFixture.get<UserMutexService>(UserMutexService);
 
     await setupTestData();
   });
 
   afterEach(async () => {
+    userMutexService.stopCleanup();
     await app.close();
   });
 
