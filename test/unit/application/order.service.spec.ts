@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderService } from '@/application/order.service';
+import { UserMutexService } from '@/application/user-mutex.service';
 import { BadRequestException, NotFoundException } from '@/common/exceptions';
 import { CART_REPOSITORY, type CartRepository } from '@/domain/cart/cart.repository';
 import { CouponQuantity } from '@/domain/coupon/coupon-quantity.vo';
@@ -84,6 +85,10 @@ describe('OrderService', () => {
       generate: jest.fn(),
     };
 
+    const mockUserMutexService = {
+      withUserLock: jest.fn((userId: string, fn: () => Promise<any>) => fn()),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrderService,
@@ -110,6 +115,10 @@ describe('OrderService', () => {
         {
           provide: ID_GENERATOR,
           useValue: mockIdGenerator,
+        },
+        {
+          provide: UserMutexService,
+          useValue: mockUserMutexService,
         },
       ],
     }).compile();

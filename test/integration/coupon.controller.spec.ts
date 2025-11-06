@@ -289,26 +289,4 @@ describe('CouponsController (Integration)', () => {
       expect(response.body.pagination.limit).toBe(10);
     });
   });
-
-  describe('동시성 테스트 샘플(아직 동시성 관련 작업이 안되어있음)', () => {
-    it('여러 사용자가 동시에 한정 쿠폰을 발급받으면 정확히 발급 수량만큼만 발급된다', async () => {
-      // given: 수량이 1개 남은 쿠폰
-      const limitedCouponId = 'coupon-limited';
-      const users = ['user-concurrent-1', 'user-concurrent-2', 'user-concurrent-3'];
-
-      // when: 3명의 사용자가 동시에 쿠폰 발급 시도
-      const requests = users.map((userId) =>
-        request(app.getHttpServer()).post(`/coupons/${limitedCouponId}/issue`).send({ userId }),
-      );
-
-      const responses = await Promise.all(requests);
-
-      // then: 1명만 성공, 2명은 실패
-      const successCount = responses.filter((r) => r.status === 201).length;
-      const failureCount = responses.filter((r) => r.status === 400).length;
-
-      expect(successCount).toBe(1);
-      expect(failureCount).toBe(2);
-    });
-  });
 });

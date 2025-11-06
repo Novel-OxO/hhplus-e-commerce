@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PointService } from '@/application/point.service';
+import { UserMutexService } from '@/application/user-mutex.service';
+import { BadRequestException, NotFoundException } from '@/common/exceptions';
+import { PaymentStatus } from '@/domain/payment/payment-status.vo';
+import { PG_CLIENT, type PGClient } from '@/domain/payment/pg-client.interface';
+import { PGPaymentInfo } from '@/domain/payment/pg-payment-info.vo';
 import { ChargeStatus } from '@/domain/point/charge-status.vo';
 import { PointBalance } from '@/domain/point/point-balance.entity';
 import { PointChargeRequest } from '@/domain/point/point-charge-request.entity';
@@ -7,10 +12,6 @@ import { PointTransaction } from '@/domain/point/point-transaction.entity';
 import { POINT_REPOSITORY, type PointRepository } from '@/domain/point/point.repository';
 import { Point } from '@/domain/point/point.vo';
 import { TransactionType } from '@/domain/point/transaction-type.vo';
-import { BadRequestException, NotFoundException } from '@/common/exceptions';
-import { PaymentStatus } from '@/domain/payment/payment-status.vo';
-import { PG_CLIENT, type PGClient } from '@/domain/payment/pg-client.interface';
-import { PGPaymentInfo } from '@/domain/payment/pg-payment-info.vo';
 import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 
 describe('PointService', () => {
@@ -37,6 +38,10 @@ describe('PointService', () => {
       getPaymentInfo: jest.fn(),
     };
 
+    const mockUserMutexService = {
+      withUserLock: jest.fn((userId: string, fn: () => Promise<any>) => fn()),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PointService,
@@ -51,6 +56,10 @@ describe('PointService', () => {
         {
           provide: PG_CLIENT,
           useValue: mockPgClient,
+        },
+        {
+          provide: UserMutexService,
+          useValue: mockUserMutexService,
         },
       ],
     }).compile();
