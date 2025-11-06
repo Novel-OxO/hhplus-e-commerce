@@ -10,6 +10,12 @@ export class CouponMemoryRepository implements CouponRepository {
   private userCoupons: Map<string, UserCoupon> = new Map();
   private histories: Map<string, CouponHistory> = new Map();
 
+  clear(): void {
+    this.coupons.clear();
+    this.userCoupons.clear();
+    this.histories.clear();
+  }
+
   findCouponById(id: string): Promise<Coupon | null> {
     return Promise.resolve(this.coupons.get(id) || null);
   }

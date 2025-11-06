@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@/common/exceptions';
 import { CartItem } from '@/domain/cart/cart-item.entity';
 import { CART_REPOSITORY, type CartRepository } from '@/domain/cart/cart.repository';
 import { PRODUCT_REPOSITORY, type ProductRepository } from '@/domain/product/product.repository';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@/common/exceptions';
 import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 
 @Injectable()
@@ -26,13 +26,11 @@ export class CartService {
     }
 
     const productOption = await this.productRepository.findOptionById(productOptionId);
-
     if (!productOption) {
       throw new NotFoundException('상품 옵션을 찾을 수 없습니다.');
     }
-
+    // 이미 장바구니에 담겨 있는경우 수량 증가
     const existingCartItem = await this.cartRepository.findByUserIdAndProductOptionId(userId, productOptionId);
-
     if (existingCartItem) {
       existingCartItem.increaseQuantity(quantity);
       const savedCartItem = await this.cartRepository.save(existingCartItem);

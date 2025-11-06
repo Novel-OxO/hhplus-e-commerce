@@ -6,6 +6,10 @@ import { CartRepository } from '@/domain/cart/cart.repository';
 export class CartMemoryRepository implements CartRepository {
   private cartItems: Map<string, CartItem> = new Map();
 
+  clear(): void {
+    this.cartItems.clear();
+  }
+
   findByUserId(userId: string): Promise<CartItem[]> {
     return Promise.resolve(Array.from(this.cartItems.values()).filter((cartItem) => cartItem.getUserId() === userId));
   }

@@ -15,6 +15,7 @@ import { Point } from '@/domain/point/point.vo';
 import { TransactionType } from '@/domain/point/transaction-type.vo';
 import { PRODUCT_REPOSITORY, type ProductRepository } from '@/domain/product/product.repository';
 import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
+import { UserMutexService } from './user-mutex.service';
 
 export interface CreateOrderItem {
   productOptionId: string;
@@ -36,6 +37,7 @@ export class OrderService {
     private readonly cartRepository: CartRepository,
     @Inject(ID_GENERATOR)
     private readonly idGenerator: IdGenerator,
+    private readonly userMutexService: UserMutexService,
   ) {}
 
   async createOrder(
@@ -44,151 +46,153 @@ export class OrderService {
     expectedAmount: number,
     userCouponId?: string,
   ): Promise<Order> {
-    if (items.length === 0) {
-      throw new BadRequestException('주문 항목이 없습니다.');
-    }
+    return this.userMutexService.withUserLock(userId, async () => {
+      if (items.length === 0) {
+        throw new BadRequestException('주문 항목이 없습니다.');
+      }
 
-    // 1. 상품 옵션 조회 및 재고 확인
-    const productOptions = await Promise.all(
-      items.map(async (item) => {
-        const option = await this.productRepository.findOptionByIdWithLock(item.productOptionId);
-        if (!option) {
-          throw new NotFoundException(`상품 옵션을 찾을 수 없습니다: ${item.productOptionId}`);
+      // 1. 상품 옵션 조회 및 재고 확인
+      const productOptions = await Promise.all(
+        items.map(async (item) => {
+          const option = await this.productRepository.findOptionByIdWithLock(item.productOptionId);
+          if (!option) {
+            throw new NotFoundException(`상품 옵션을 찾을 수 없습니다: ${item.productOptionId}`);
+          }
+
+          if (!option.canOrder(item.quantity)) {
+            throw new BadRequestException(`재고가 부족합니다: ${option.getName()}`);
+          }
+
+          return { option, quantity: item.quantity };
+        }),
+      );
+
+      // 2. 주문 금액 계산
+      let orderAmount = new Point(0);
+      productOptions.forEach(({ option, quantity }) => {
+        const productPrice = option.getAdditionalPrice();
+        orderAmount = orderAmount.add(new Point(productPrice * quantity));
+      });
+
+      // 3. 쿠폰 할인 적용
+      let discountAmount = new Point(0);
+      let userCoupon: UserCoupon | null = null;
+      let coupon: Coupon | null = null;
+
+      if (userCouponId) {
+        userCoupon = await this.couponRepository.findUserCouponById(userCouponId);
+        if (!userCoupon) {
+          throw new NotFoundException('쿠폰을 찾을 수 없습니다.');
         }
 
-        if (!option.canOrder(item.quantity)) {
-          throw new BadRequestException(`재고가 부족합니다: ${option.getName()}`);
+        if (userCoupon.getUserId() !== userId) {
+          throw new BadRequestException('본인의 쿠폰만 사용할 수 있습니다.');
         }
 
-        return { option, quantity: item.quantity };
-      }),
-    );
+        coupon = await this.couponRepository.findCouponById(userCoupon.getCouponId());
+        if (!coupon) {
+          throw new NotFoundException('쿠폰 정보를 찾을 수 없습니다.');
+        }
 
-    // 2. 주문 금액 계산
-    let orderAmount = new Point(0);
-    productOptions.forEach(({ option, quantity }) => {
-      const productPrice = option.getAdditionalPrice();
-      orderAmount = orderAmount.add(new Point(productPrice * quantity));
-    });
+        const now = new Date();
+        if (!userCoupon.canUse(now, orderAmount, coupon.getMinOrderAmount())) {
+          throw new BadRequestException('사용할 수 없는 쿠폰입니다.');
+        }
 
-    // 3. 쿠폰 할인 적용
-    let discountAmount = new Point(0);
-    let userCoupon: UserCoupon | null = null;
-    let coupon: Coupon | null = null;
-
-    if (userCouponId) {
-      userCoupon = await this.couponRepository.findUserCouponById(userCouponId);
-      if (!userCoupon) {
-        throw new NotFoundException('쿠폰을 찾을 수 없습니다.');
+        discountAmount = coupon.calculateDiscount(orderAmount);
       }
 
-      if (userCoupon.getUserId() !== userId) {
-        throw new BadRequestException('본인의 쿠폰만 사용할 수 있습니다.');
+      // 4. 최종 금액 계산 및 검증
+      const finalAmount = orderAmount.subtract(discountAmount);
+      finalAmount.validateAmount(expectedAmount);
+
+      // 5. 포인트 잔액 확인 및 차감
+      const pointBalance = await this.pointRepository.findBalanceByUserId(userId);
+      if (!pointBalance) {
+        throw new NotFoundException('포인트 잔액을 찾을 수 없습니다.');
       }
 
-      coupon = await this.couponRepository.findCouponById(userCoupon.getCouponId());
-      if (!coupon) {
-        throw new NotFoundException('쿠폰 정보를 찾을 수 없습니다.');
+      if (!pointBalance.getBalance().isGreaterThanOrEqual(finalAmount)) {
+        throw new BadRequestException('포인트 잔액이 부족합니다.');
       }
 
-      const now = new Date();
-      if (!userCoupon.canUse(now, orderAmount, coupon.getMinOrderAmount())) {
-        throw new BadRequestException('사용할 수 없는 쿠폰입니다.');
+      pointBalance.use(finalAmount);
+      await this.pointRepository.saveBalance(pointBalance);
+
+      // 6. 재고 차감
+      for (const { option, quantity } of productOptions) {
+        option.decreaseStock(quantity);
+        await this.productRepository.saveOption(option);
       }
 
-      discountAmount = coupon.calculateDiscount(orderAmount);
-    }
+      // 7. 주문 생성
+      const orderId = this.idGenerator.generate();
+      const orderItems = productOptions.map(
+        ({ option, quantity }) =>
+          new OrderItem(
+            this.idGenerator.generate(),
+            orderId,
+            option.getId(),
+            quantity,
+            new Point(option.getAdditionalPrice()),
+            new Point(option.getAdditionalPrice() * quantity),
+          ),
+      );
 
-    // 4. 최종 금액 계산 및 검증
-    const finalAmount = orderAmount.subtract(discountAmount);
-    finalAmount.validateAmount(expectedAmount);
-
-    // 5. 포인트 잔액 확인 및 차감
-    const pointBalance = await this.pointRepository.findBalanceByUserId(userId);
-    if (!pointBalance) {
-      throw new NotFoundException('포인트 잔액을 찾을 수 없습니다.');
-    }
-
-    if (!pointBalance.getBalance().isGreaterThanOrEqual(finalAmount)) {
-      throw new BadRequestException('포인트 잔액이 부족합니다.');
-    }
-
-    pointBalance.use(finalAmount);
-    await this.pointRepository.saveBalance(pointBalance);
-
-    // 6. 재고 차감
-    for (const { option, quantity } of productOptions) {
-      option.decreaseStock(quantity);
-      await this.productRepository.saveOption(option);
-    }
-
-    // 7. 주문 생성
-    const orderId = this.idGenerator.generate();
-    const orderItems = productOptions.map(
-      ({ option, quantity }) =>
-        new OrderItem(
-          this.idGenerator.generate(),
-          orderId,
-          option.getId(),
-          quantity,
-          new Point(option.getAdditionalPrice()),
-          new Point(option.getAdditionalPrice() * quantity),
-        ),
-    );
-
-    const order = new Order(
-      orderId,
-      userId,
-      orderItems,
-      orderAmount,
-      discountAmount,
-      finalAmount,
-      userCouponId ?? null,
-      new Date(),
-    );
-
-    await this.orderRepository.save(order);
-    await this.orderRepository.saveItems(orderItems);
-
-    // 8. 포인트 사용 내역 생성
-    const pointTransaction = new PointTransaction(
-      this.idGenerator.generate(),
-      userId,
-      TransactionType.USE,
-      finalAmount,
-      pointBalance.getBalance(),
-      orderId,
-      new Date(),
-    );
-    await this.pointRepository.createTransaction(pointTransaction);
-
-    // 9. 쿠폰 사용 처리
-    if (userCoupon && coupon) {
-      userCoupon.use(orderId);
-      await this.couponRepository.saveUserCoupon(userCoupon);
-
-      const couponHistory = new CouponHistory(
-        this.idGenerator.generate(),
-        userCoupon.getId(),
-        userId,
-        userCoupon.getCouponId(),
+      const order = new Order(
         orderId,
-        discountAmount,
+        userId,
+        orderItems,
         orderAmount,
+        discountAmount,
+        finalAmount,
+        userCouponId ?? null,
         new Date(),
       );
-      await this.couponRepository.saveHistory(couponHistory);
-    }
 
-    // 10. 장바구니에서 주문한 아이템 제거
-    for (const item of items) {
-      const cartItem = await this.cartRepository.findByUserIdAndProductOptionId(userId, item.productOptionId);
-      if (cartItem) {
-        await this.cartRepository.delete(cartItem.getId());
+      await this.orderRepository.save(order);
+      await this.orderRepository.saveItems(orderItems);
+
+      // 8. 포인트 사용 내역 생성
+      const pointTransaction = new PointTransaction(
+        this.idGenerator.generate(),
+        userId,
+        TransactionType.USE,
+        finalAmount,
+        pointBalance.getBalance(),
+        orderId,
+        new Date(),
+      );
+      await this.pointRepository.createTransaction(pointTransaction);
+
+      // 9. 쿠폰 사용 처리
+      if (userCoupon && coupon) {
+        userCoupon.use(orderId);
+        await this.couponRepository.saveUserCoupon(userCoupon);
+
+        const couponHistory = new CouponHistory(
+          this.idGenerator.generate(),
+          userCoupon.getId(),
+          userId,
+          userCoupon.getCouponId(),
+          orderId,
+          discountAmount,
+          orderAmount,
+          new Date(),
+        );
+        await this.couponRepository.saveHistory(couponHistory);
       }
-    }
 
-    return order;
+      // 10. 장바구니에서 주문한 아이템 제거
+      for (const item of items) {
+        const cartItem = await this.cartRepository.findByUserIdAndProductOptionId(userId, item.productOptionId);
+        if (cartItem) {
+          await this.cartRepository.delete(cartItem.getId());
+        }
+      }
+
+      return order;
+    });
   }
 
   async getOrder(userId: string, orderId: string): Promise<Order> {
@@ -206,31 +210,33 @@ export class OrderService {
   }
 
   async updateOrderStatus(userId: string, orderId: string, status: string): Promise<Order> {
-    const order = await this.orderRepository.findByIdWithLock(orderId);
+    return this.userMutexService.withUserLock(userId, async () => {
+      const order = await this.orderRepository.findByIdWithLock(orderId);
 
-    if (!order) {
-      throw new NotFoundException('주문을 찾을 수 없습니다.');
-    }
+      if (!order) {
+        throw new NotFoundException('주문을 찾을 수 없습니다.');
+      }
 
-    if (order.getUserId() !== userId) {
-      throw new BadRequestException('본인의 주문만 수정할 수 있습니다.');
-    }
+      if (order.getUserId() !== userId) {
+        throw new BadRequestException('본인의 주문만 수정할 수 있습니다.');
+      }
 
-    const newStatus = OrderStatus.fromString(status);
+      const newStatus = OrderStatus.fromString(status);
 
-    if (newStatus.isCompleted()) {
-      order.complete();
-    } else if (newStatus.isCancelled()) {
-      // 주문 취소 시 재고 복구, 포인트 환불, 쿠폰 복구
-      await this.cancelOrder(order);
-      order.cancel();
-    } else {
-      throw new BadRequestException('유효하지 않은 주문 상태입니다.');
-    }
+      if (newStatus.isCompleted()) {
+        order.complete();
+      } else if (newStatus.isCancelled()) {
+        // 주문 취소 시 재고 복구, 포인트 환불, 쿠폰 복구
+        await this.cancelOrder(order);
+        order.cancel();
+      } else {
+        throw new BadRequestException('유효하지 않은 주문 상태입니다.');
+      }
 
-    await this.orderRepository.save(order);
+      await this.orderRepository.save(order);
 
-    return order;
+      return order;
+    });
   }
 
   private async cancelOrder(order: Order): Promise<void> {

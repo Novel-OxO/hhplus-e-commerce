@@ -1,17 +1,23 @@
 import { Injectable } from '@nestjs/common';
+import { NotFoundException } from '@/common/exceptions';
 import { ChargeStatus } from '@/domain/point/charge-status.vo';
 import { PointBalance } from '@/domain/point/point-balance.entity';
 import { PointChargeRequest } from '@/domain/point/point-charge-request.entity';
 import { PointTransaction } from '@/domain/point/point-transaction.entity';
 import { PointRepository } from '@/domain/point/point.repository';
 import { Point } from '@/domain/point/point.vo';
-import { NotFoundException } from '@/common/exceptions';
 
 @Injectable()
 export class PointMemoryRepository implements PointRepository {
   private readonly balances = new Map<string, PointBalance>();
   private readonly chargeRequests = new Map<string, PointChargeRequest>();
   private readonly transactions = new Map<string, PointTransaction>();
+
+  clear(): void {
+    this.balances.clear();
+    this.chargeRequests.clear();
+    this.transactions.clear();
+  }
 
   findBalanceByUserId(userId: string): Promise<PointBalance | null> {
     let balance = this.balances.get(userId);

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PointService } from '@/application/point.service';
+import { PG_CLIENT } from '@/domain/payment/pg-client.interface';
 import { POINT_REPOSITORY } from '@/domain/point/point.repository';
 import { PointMemoryRepository } from '@/infrastructure/database/point-memory.repository';
-import { PointsController } from '@/presentation/http/point/points.controller';
-import { PG_CLIENT } from '@/domain/payment/pg-client.interface';
 import { MockPGClient } from '@/infrastructure/external/mock-pg-client';
 import { ID_GENERATOR } from '@/infrastructure/id-generator/id-generator.interface';
 import { SnowflakeIdGenerator } from '@/infrastructure/id-generator/snowflake-id-generator';
+import { PointsController } from '@/presentation/http/point/points.controller';
 
 @Module({
   controllers: [PointsController],
@@ -25,6 +25,6 @@ import { SnowflakeIdGenerator } from '@/infrastructure/id-generator/snowflake-id
       useClass: MockPGClient,
     },
   ],
-  exports: [PointService],
+  exports: [PointService, POINT_REPOSITORY, PG_CLIENT],
 })
 export class PointsModule {}
