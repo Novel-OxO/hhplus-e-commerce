@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+// 1. 사용자
+model User {
+  userId    BigInt   @id @default(autoincrement()) @map("user_id")
+  name      String   @db.VarChar(100)
+  email     String  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  orders              Order[]
+  cartItems           CartItem[]
+  pointBalance        PointBalance?
+  userCoupons         UserCoupon[]
+  pointChargeRequests PointChargeRequest[]
+  pointTransactions   PointTransaction[]
+
+  @@map("users")
+}
+
+// 2. 상품
+model Product {
+  productId   BigInt   @id @default(autoincrement()) @map("product_id")
+  productName String   @map("product_name") @db.VarChar(200)
+  description String  @db.Text
+  basePrice   Decimal  @map("base_price") @db.Decimal(10, 2)
+  viewCount   BigInt   @default(0) @map("view_count")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  productOptions  ProductOption[]
+  productRankings ProductRanking[]
+
+  @@map("products")
+}
+
+// 3. 상품 옵션
+model ProductOption {
+  productOptionId BigInt   @id @default(autoincrement()) @map("product_option_id")
+  productId       BigInt   @map("product_id")
+  optionName      String   @map("option_name") @db.VarChar(100)
+  sku             String   @db.VarChar(100)
+  stockQuantity   Int      @default(0) @map("stock_quantity")
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  product    Product     @relation(fields: [productId], references: [productId])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_options")
+}
+
+// 4. 상품 랭킹 (최근 3일 조회수 기반)
+model ProductRanking {
+  rankingId BigInt   @id @default(autoincrement()) @map("ranking_id")
+  productId BigInt   @map("product_id")
+  ranking   Int
+  viewCount BigInt   @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  // Relations
+  product Product @relation(fields: [productId], references: [productId])
+
+  @@index([productId])
+  @@map("product_rankings")
+}
+
+// 5. 장바구니
+model CartItem {
+  cartItemId      BigInt   @id @default(autoincrement()) @map("cart_item_id")
+  userId          BigInt   @map("user_id")
+  productOptionId BigInt   @map("product_option_id")
+  quantity        Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [userId])
+  productOption ProductOption @relation(fields: [productOptionId], references: [productOptionId])
+
+  @@index([userId])
+  @@index([productOptionId])
+  @@map("cart_items")
+}
+
+// 6. 쿠폰
+model Coupon {
+  couponId          BigInt       @id @default(autoincrement()) @map("coupon_id")
+  couponName        String       @map("coupon_name") @db.VarChar(200)
+  discountType      DiscountType @map("discount_type")
+  discountValue     Decimal      @map("discount_value") @db.Decimal(10, 2)
+  maxDiscountAmount Decimal      @map("max_discount_amount") @db.Decimal(10, 2)
+  minOrderAmount    Decimal      @map("min_order_amount") @db.Decimal(10, 2)
+  totalQuantity     Int          @map("total_quantity")
+  issuedQuantity    Int          @default(0) @map("issued_quantity")
+  validFrom         DateTime     @map("valid_from") @db.DateTime(3)
+  validUntil        DateTime     @map("valid_until") @db.DateTime(3)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  userCoupons UserCoupon[]
+
+  @@map("coupons")
+}
+
+// 7. 사용자 쿠폰
+model UserCoupon {
+  userCouponId BigInt    @id @default(autoincrement()) @map("user_coupon_id")
+  userId       BigInt    @map("user_id")
+  couponId     BigInt    @map("coupon_id")
+  orderId      BigInt?   @map("order_id")
+  isUsed       Boolean   @default(false) @map("is_used")
+  issuedAt     DateTime  @map("issued_at") @db.DateTime(3)
+  expiresAt    DateTime  @map("expires_at") @db.DateTime(3)
+  usedAt       DateTime? @map("used_at") @db.DateTime(3)
+
+  // Relations
+  user                 User                  @relation(fields: [userId], references: [userId])
+  coupon               Coupon                @relation(fields: [couponId], references: [couponId])
+  order                Order?                @relation(fields: [orderId], references: [orderId])
+  couponUsageHistories CouponUsageHistory[]
+
+  @@index([userId])
+  @@index([couponId])
+  @@index([orderId])
+  @@map("user_coupons")
+}
+
+// 8. 주문
+model Order {
+  orderId       BigInt      @id @default(autoincrement()) @map("order_id")
+  userId        BigInt      @map("user_id")
+  userCouponId  BigInt?     @map("user_coupon_id")
+  orderStatus   OrderStatus @map("order_status")
+  totalPrice    Decimal     @map("total_price") @db.Decimal(10, 2)
+  discountPrice Decimal     @map("discount_price") @db.Decimal(10, 2)
+  finalPrice    Decimal     @map("final_price") @db.Decimal(10, 2)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  user                 User                  @relation(fields: [userId], references: [userId])
+  orderItems           OrderItem[]
+  userCoupons          UserCoupon[]
+  couponUsageHistories CouponUsageHistory[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+// 9. 주문 아이템 (스냅샷)
+model OrderItem {
+  orderItemId     BigInt   @id @default(autoincrement()) @map("order_item_id")
+  orderId         BigInt   @map("order_id")
+  productOptionId BigInt   @map("product_option_id")
+  productName     String   @map("product_name") @db.VarChar(200)
+  optionName      String   @map("option_name") @db.VarChar(100)
+  sku             String   @db.VarChar(100)
+  price           Decimal  @db.Decimal(10, 2)
+  quantity        Int
+  subtotal        Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  // Relations
+  order         Order         @relation(fields: [orderId], references: [orderId])
+  productOption ProductOption @relation(fields: [productOptionId], references: [productOptionId])
+
+  @@index([orderId])
+  @@index([productOptionId])
+  @@map("order_items")
+}
+
+// 10. 쿠폰 사용 내역
+model CouponUsageHistory {
+  usageId       BigInt            @id @default(autoincrement()) @map("usage_id")
+  userCouponId  BigInt            @map("user_coupon_id")
+  orderId       BigInt            @map("order_id")
+  discountPrice Decimal           @map("discount_price") @db.Decimal(10, 2)
+  status        CouponUsageStatus
+  usedAt        DateTime          @map("used_at") @db.DateTime(3)
+
+  // Relations
+  userCoupon UserCoupon @relation(fields: [userCouponId], references: [userCouponId])
+  order      Order      @relation(fields: [orderId], references: [orderId])
+
+  @@index([userCouponId])
+  @@index([orderId])
+  @@map("coupon_usage_history")
+}
+
+// 11. 포인트 잔액
+model PointBalance {
+  userId    BigInt   @id @map("user_id")
+  balance   Decimal  @db.Decimal(10, 2)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  user User @relation(fields: [userId], references: [userId])
+
+  @@map("point_balances")
+}
+
+// 12. 포인트 충전 요청
+model PointChargeRequest {
+  chargeRequestId BigInt              @id @default(autoincrement()) @map("charge_request_id")
+  userId          BigInt              @map("user_id")
+  amount          Decimal             @db.Decimal(10, 2)
+  status          ChargeRequestStatus
+  createdAt       DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  completedAt     DateTime?           @map("completed_at") @db.DateTime(3)
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [userId])
+  payments Payment[]
+
+  @@index([userId])
+  @@map("point_charge_requests")
+}
+
+// 13. PG 결제 정보 (포인트 충전용)
+model Payment {
+  paymentId       BigInt        @id @default(autoincrement()) @map("payment_id")
+  chargeRequestId BigInt        @map("charge_request_id")
+  pgPaymentId     String        @map("pg_payment_id") @db.VarChar(255)
+  paymentStatus   PaymentStatus @map("payment_status")
+  amount          Decimal       @db.Decimal(10, 2)
+  paidAt          DateTime?     @map("paid_at") @db.DateTime(3)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
+
+  // Relations
+  chargeRequest PointChargeRequest @relation(fields: [chargeRequestId], references: [chargeRequestId])
+
+  @@index([chargeRequestId])
+  @@map("payments")
+}
+
+// 14. 포인트 거래 내역
+model PointTransaction {
+  transactionId   BigInt          @id @default(autoincrement()) @map("transaction_id")
+  userId          BigInt          @map("user_id")
+  transactionType TransactionType @map("transaction_type")
+  amount          Decimal         @db.Decimal(10, 2)
+  balanceAfter    Decimal         @map("balance_after") @db.Decimal(10, 2)
+  referenceId     BigInt          @map("reference_id")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.DateTime(3)
+
+  // Relations
+  user User @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@map("point_transactions")
+}
+
+// Enums
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum CouponUsageStatus {
+  USED
+  CANCELLED
+}
+
+enum ChargeRequestStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum TransactionType {
+  CHARGE
+  USE
+}
