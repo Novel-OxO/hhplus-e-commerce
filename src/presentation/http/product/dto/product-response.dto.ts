@@ -1,13 +1,13 @@
 export class ProductOptionDto {
-  id: string;
-  productId: string;
+  id: number;
+  productId: number;
   name: string;
-  additionalPrice: number;
+  sku: string;
   stock: number;
 }
 
 export class ProductDetailDto {
-  id: string;
+  id: number;
   name: string;
   description: string;
   price: number;

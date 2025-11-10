@@ -5,13 +5,11 @@ export class GetCartResponseDto {
 }
 
 export class CartItemDto {
-  cartItemId: string;
-  productOptionId: string;
+  cartItemId: number;
+  productOptionId: number;
   quantity: number;
-  savedPrice: number;
   currentPrice: number;
   currentStock: number;
-  isPriceChanged: boolean;
   isStockSufficient: boolean;
   subtotal: number;
 }

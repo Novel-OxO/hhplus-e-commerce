@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: hhplus-ecommerce-mysql
+    restart: unless-stopped
+    ports:
+      - "13306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: qwer1234
+      MYSQL_DATABASE: hhplus_ecommerce
+      MYSQL_USER: hhplus
+      MYSQL_PASSWORD: qwer1234
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - hhplus-ecommerce
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+    name: hhplus-ecommerce-mysql-data
+
+networks:
+  hhplus-ecommerce:
+    name: hhplus-ecommerce
+    driver: bridge

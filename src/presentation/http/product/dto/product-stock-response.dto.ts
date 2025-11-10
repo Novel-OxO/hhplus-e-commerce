@@ -1,6 +1,6 @@
 export class GetProductStockResponseDto {
   optionId: string;
-  productId: string;
+  productId: number;
   name: string;
   stock: number;
   isAvailable: boolean;

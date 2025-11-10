@@ -12,9 +12,9 @@ export class Order {
     private readonly id: string,
     private readonly userId: string,
     private readonly items: OrderItem[],
-    private readonly orderAmount: Point,
-    private readonly discountAmount: Point,
-    private readonly finalAmount: Point,
+    private readonly totalPrice: Point,
+    private readonly discountPrice: Point,
+    private readonly finalPrice: Point,
     private readonly userCouponId: string | null,
     private readonly createdAt: Date,
     status?: OrderStatus,
@@ -31,9 +31,9 @@ export class Order {
   }
 
   validateAmount(expectedAmount: Point): void {
-    if (!this.finalAmount.equals(expectedAmount)) {
+    if (!this.finalPrice.equals(expectedAmount)) {
       throw new BadRequestException(
-        `주문 금액이 일치하지 않습니다. 예상: ${expectedAmount.getValue()}, 실제: ${this.finalAmount.getValue()}`,
+        `주문 금액이 일치하지 않습니다. 예상: ${expectedAmount.getValue()}, 실제: ${this.finalPrice.getValue()}`,
       );
     }
   }
@@ -76,16 +76,16 @@ export class Order {
     return [...this.items];
   }
 
-  getOrderAmount(): Point {
-    return this.orderAmount;
+  getTotalPrice(): Point {
+    return this.totalPrice;
   }
 
-  getDiscountAmount(): Point {
-    return this.discountAmount;
+  getDiscountPrice(): Point {
+    return this.discountPrice;
   }
 
-  getFinalAmount(): Point {
-    return this.finalAmount;
+  getFinalPrice(): Point {
+    return this.finalPrice;
   }
 
   getUserCouponId(): string | null {

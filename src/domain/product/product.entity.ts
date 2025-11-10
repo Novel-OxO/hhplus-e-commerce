@@ -1,27 +1,32 @@
 export class Product {
   constructor(
-    private readonly id: string,
-    private readonly name: string,
+    private readonly productId: number,
+    private readonly productName: string,
     private readonly description: string,
-    private readonly price: number,
+    private readonly basePrice: number,
+    private viewCount: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
   ) {}
 
-  getId(): string {
-    return this.id;
+  getProductId(): number {
+    return this.productId;
   }
 
-  getName(): string {
-    return this.name;
+  getProductName(): string {
+    return this.productName;
   }
 
   getDescription(): string {
     return this.description;
   }
 
-  getPrice(): number {
-    return this.price;
+  getBasePrice(): number {
+    return this.basePrice;
+  }
+
+  getViewCount(): number {
+    return this.viewCount;
   }
 
   getCreatedAt(): Date {
@@ -30,5 +35,9 @@ export class Product {
 
   getUpdatedAt(): Date {
     return this.updatedAt;
+  }
+
+  incrementViewCount(): void {
+    this.viewCount++;
   }
 }

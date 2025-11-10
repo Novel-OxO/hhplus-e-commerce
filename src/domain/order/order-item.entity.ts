@@ -5,13 +5,16 @@ export class OrderItem {
     private readonly id: string,
     private readonly orderId: string,
     private readonly productOptionId: string,
+    private readonly productName: string,
+    private readonly optionName: string,
+    private readonly sku: string,
     private readonly quantity: number,
-    private readonly unitPrice: Point,
+    private readonly price: Point,
     private readonly subtotal: Point,
   ) {}
 
   validateSubtotal(): boolean {
-    const expectedSubtotal = this.unitPrice.multiply(this.quantity);
+    const expectedSubtotal = this.price.multiply(this.quantity);
     return this.subtotal.equals(expectedSubtotal);
   }
 
@@ -27,12 +30,24 @@ export class OrderItem {
     return this.productOptionId;
   }
 
+  getProductName(): string {
+    return this.productName;
+  }
+
+  getOptionName(): string {
+    return this.optionName;
+  }
+
+  getSku(): string {
+    return this.sku;
+  }
+
   getQuantity(): number {
     return this.quantity;
   }
 
-  getUnitPrice(): Point {
-    return this.unitPrice;
+  getPrice(): Point {
+    return this.price;
   }
 
   getSubtotal(): Point {
