@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@/common/exceptions';
 import { CART_REPOSITORY, type CartRepository } from '@/domain/cart/cart.repository';
-import { CouponHistory } from '@/domain/coupon/coupon-history.entity';
 import { Coupon } from '@/domain/coupon/coupon.entity';
 import { COUPON_REPOSITORY, type CouponRepository } from '@/domain/coupon/coupon.repository';
 import { UserCoupon } from '@/domain/coupon/user-coupon.entity';
@@ -14,7 +13,6 @@ import { POINT_REPOSITORY, type PointRepository } from '@/domain/point/point.rep
 import { Point } from '@/domain/point/point.vo';
 import { TransactionType } from '@/domain/point/transaction-type.vo';
 import { PRODUCT_REPOSITORY, type ProductRepository } from '@/domain/product/product.repository';
-import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 import { UserMutexService } from './user-mutex.service';
 
 export interface CreateOrderItem {
@@ -35,8 +33,6 @@ export class OrderService {
     private readonly couponRepository: CouponRepository,
     @Inject(CART_REPOSITORY)
     private readonly cartRepository: CartRepository,
-    @Inject(ID_GENERATOR)
-    private readonly idGenerator: IdGenerator,
     private readonly userMutexService: UserMutexService,
   ) {}
 
@@ -60,17 +56,26 @@ export class OrderService {
           }
 
           if (!option.canOrder(item.quantity)) {
-            throw new BadRequestException(`재고가 부족합니다: ${option.getName()}`);
+            throw new BadRequestException(`재고가 부족합니다: ${option.getOptionName()}`);
           }
 
           return { option, quantity: item.quantity };
         }),
       );
 
+      // 1-1. 상품 정보 조회 (가격 정보 필요)
+      const uniqueProductIds = [...new Set(productOptions.map(({ option }) => option.getProductId()))];
+      const products = await Promise.all(uniqueProductIds.map((id) => this.productRepository.findById(id)));
+      const productMap = new Map(products.filter((p) => p !== null).map((p) => [p.getProductId(), p]));
+
       // 2. 주문 금액 계산
       let orderAmount = new Point(0);
       productOptions.forEach(({ option, quantity }) => {
-        const productPrice = option.getAdditionalPrice();
+        const product = productMap.get(option.getProductId());
+        if (!product) {
+          throw new NotFoundException(`상품을 찾을 수 없습니다: ${option.getProductId()}`);
+        }
+        const productPrice = product.getBasePrice();
         orderAmount = orderAmount.add(new Point(productPrice * quantity));
       });
 
@@ -126,18 +131,26 @@ export class OrderService {
       }
 
       // 7. 주문 생성
-      const orderId = this.idGenerator.generate();
-      const orderItems = productOptions.map(
-        ({ option, quantity }) =>
-          new OrderItem(
-            this.idGenerator.generate(),
-            orderId,
-            option.getId(),
-            quantity,
-            new Point(option.getAdditionalPrice()),
-            new Point(option.getAdditionalPrice() * quantity),
-          ),
-      );
+      const orderId = ''; // TODO: Prisma에서 생성된 ID 사용
+      const orderItems = productOptions.map(({ option, quantity }) => {
+        const product = productMap.get(option.getProductId());
+        if (!product) {
+          throw new NotFoundException(`상품을 찾을 수 없습니다: ${option.getProductId()}`);
+        }
+        const productPrice = product.getBasePrice();
+
+        return new OrderItem(
+          '', // TODO: Prisma에서 생성된 ID 사용
+          orderId,
+          String(option.getProductOptionId()),
+          product.getProductName(),
+          option.getOptionName(),
+          option.getSku(),
+          quantity,
+          new Point(productPrice),
+          new Point(productPrice * quantity),
+        );
+      });
 
       const order = new Order(
         orderId,
@@ -155,7 +168,7 @@ export class OrderService {
 
       // 8. 포인트 사용 내역 생성
       const pointTransaction = new PointTransaction(
-        this.idGenerator.generate(),
+        '', // TODO: Prisma에서 생성된 ID 사용
         userId,
         TransactionType.USE,
         finalAmount,
@@ -169,25 +182,16 @@ export class OrderService {
       if (userCoupon && coupon) {
         userCoupon.use(orderId);
         await this.couponRepository.saveUserCoupon(userCoupon);
-
-        const couponHistory = new CouponHistory(
-          this.idGenerator.generate(),
-          userCoupon.getId(),
-          userId,
-          userCoupon.getCouponId(),
-          orderId,
-          discountAmount,
-          orderAmount,
-          new Date(),
-        );
-        await this.couponRepository.saveHistory(couponHistory);
       }
 
       // 10. 장바구니에서 주문한 아이템 제거
       for (const item of items) {
-        const cartItem = await this.cartRepository.findByUserIdAndProductOptionId(userId, item.productOptionId);
+        const cartItem = await this.cartRepository.findByUserIdAndProductOptionId(
+          Number(userId),
+          Number(item.productOptionId),
+        );
         if (cartItem) {
-          await this.cartRepository.delete(cartItem.getId());
+          await this.cartRepository.delete(cartItem.getCartItemId());
         }
       }
 
@@ -253,14 +257,14 @@ export class OrderService {
     // 2. 포인트 환불
     const pointBalance = await this.pointRepository.findBalanceByUserId(order.getUserId());
     if (pointBalance) {
-      pointBalance.charge(order.getFinalAmount());
+      pointBalance.charge(order.getFinalPrice());
       await this.pointRepository.saveBalance(pointBalance);
 
       const pointTransaction = new PointTransaction(
-        this.idGenerator.generate(),
+        '', // TODO: Prisma에서 생성된 ID 사용
         order.getUserId(),
         TransactionType.REFUND,
-        order.getFinalAmount(),
+        order.getFinalPrice(),
         pointBalance.getBalance(),
         order.getId(),
         new Date(),

@@ -7,9 +7,9 @@ import { Product } from './product.entity';
 export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
 
 export interface ProductRepository {
-  findById(productId: string): Promise<Product | null>;
+  findById(productId: number): Promise<Product | null>;
 
-  findOptionsByProductId(productId: string): Promise<ProductOption[]>;
+  findOptionsByProductId(productId: number): Promise<ProductOption[]>;
 
   findOptionById(optionId: string): Promise<ProductOption | null>;
 

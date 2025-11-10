@@ -5,7 +5,6 @@ import { ProductViewLog } from '@/domain/product/product-view-log.entity';
 import { ProductWithOptions } from '@/domain/product/product-with-options.vo';
 import { Product } from '@/domain/product/product.entity';
 import { PRODUCT_REPOSITORY, type ProductRepository } from '@/domain/product/product.repository';
-import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 import { ProductRankingService } from './product-ranking.service';
 
 @Injectable()
@@ -13,12 +12,10 @@ export class ProductService {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: ProductRepository,
-    @Inject(ID_GENERATOR)
-    private readonly idGenerator: IdGenerator,
     private readonly productRankingService: ProductRankingService,
   ) {}
 
-  async getProductWithOptions(productId: string): Promise<ProductWithOptions> {
+  async getProductWithOptions(productId: number): Promise<ProductWithOptions> {
     const product = await this.productRepository.findById(productId);
 
     if (!product) {
@@ -30,7 +27,7 @@ export class ProductService {
     return new ProductWithOptions(product, options);
   }
 
-  async getOptionStock(productId: string, optionId: string): Promise<ProductOption> {
+  async getOptionStock(productId: number, optionId: string): Promise<ProductOption> {
     const product = await this.productRepository.findById(productId);
 
     if (!product) {
@@ -65,7 +62,7 @@ export class ProductService {
     // 상품 정보 조회
     const products: Product[] = [];
     for (const ranking of rankings) {
-      const product = await this.productRepository.findById(ranking.getProductId());
+      const product = await this.productRepository.findById(Number(ranking.getProductId()));
       if (product) {
         products.push(product);
       }
@@ -79,7 +76,7 @@ export class ProductService {
    * - ProductViewLog: 개별 조회 이벤트 로그 저장
    * - ProductDailyView: 일별 조회수 집계 (실시간 증가)
    */
-  async recordProductView(productId: string, userId?: string): Promise<void> {
+  async recordProductView(productId: number, userId?: string): Promise<void> {
     // 상품 존재 여부 확인
     const product = await this.productRepository.findById(productId);
     if (!product) {
@@ -90,12 +87,12 @@ export class ProductService {
     const viewDate = this.formatDate(now);
 
     // 1. 조회 로그 저장 (상세 추적용)
-    const logId = this.idGenerator.generate();
-    const viewLog = new ProductViewLog(logId, productId, userId, now);
+    const logId = ''; // TODO: Prisma에서 생성된 ID 사용
+    const viewLog = new ProductViewLog(logId, String(productId), userId, now);
     await this.productRepository.saveViewLog(viewLog);
 
     // 2. 일별 집계 데이터 증가 (실시간 통계용)
-    const dailyView = await this.productRepository.findOrCreateDailyView(productId, viewDate);
+    const dailyView = await this.productRepository.findOrCreateDailyView(String(productId), viewDate);
     dailyView.incrementViewCount();
     await this.productRepository.saveDailyView(dailyView);
   }

@@ -29,10 +29,10 @@ export class ProductsController {
 
     return {
       products: products.map((p) => ({
-        id: p.getId(),
-        name: p.getName(),
+        id: p.getProductId(),
+        name: p.getProductName(),
         description: p.getDescription(),
-        price: p.getPrice(),
+        price: p.getBasePrice(),
       })),
       period: {
         days: daysNum,
@@ -43,21 +43,22 @@ export class ProductsController {
   @Get(':id')
   @ApiGetProductDetail()
   async getProductDetail(@Param('id') id: string): Promise<GetProductDetailResponseDto> {
-    const productWithOptions = await this.productService.getProductWithOptions(id);
+    const productId = parseInt(id, 10);
+    const productWithOptions = await this.productService.getProductWithOptions(productId);
     const product = productWithOptions.getProduct();
     const options = productWithOptions.getOptions();
 
     return {
       product: {
-        id: product.getId(),
-        name: product.getName(),
+        id: product.getProductId(),
+        name: product.getProductName(),
         description: product.getDescription(),
-        price: product.getPrice(),
+        price: product.getBasePrice(),
         options: options.map((opt) => ({
-          id: opt.getId(),
+          id: opt.getProductOptionId(),
           productId: opt.getProductId(),
-          name: opt.getName(),
-          additionalPrice: opt.getAdditionalPrice(),
+          name: opt.getOptionName(),
+          sku: opt.getSku(),
           stock: opt.getStock(),
         })),
       },
@@ -70,12 +71,13 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('optionId') optionId: string,
   ): Promise<GetProductStockResponseDto> {
-    const option = await this.productService.getOptionStock(id, optionId);
+    const productId = parseInt(id, 10);
+    const option = await this.productService.getOptionStock(productId, optionId);
 
     return {
-      optionId: option.getId(),
+      optionId: String(option.getProductOptionId()),
       productId: option.getProductId(),
-      name: option.getName(),
+      name: option.getOptionName(),
       stock: option.getStock(),
       isAvailable: option.getStock() > 0,
     };

@@ -9,7 +9,6 @@ import { PointTransaction } from '@/domain/point/point-transaction.entity';
 import { POINT_REPOSITORY, type PointRepository } from '@/domain/point/point.repository';
 import { Point } from '@/domain/point/point.vo';
 import { TransactionType } from '@/domain/point/transaction-type.vo';
-import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 import { UserMutexService } from './user-mutex.service';
 
 @Injectable()
@@ -17,8 +16,6 @@ export class PointService {
   constructor(
     @Inject(POINT_REPOSITORY)
     private readonly pointRepository: PointRepository,
-    @Inject(ID_GENERATOR)
-    private readonly idGenerator: IdGenerator,
     @Inject(PG_CLIENT)
     private readonly pgClient: PGClient,
     private readonly userMutexService: UserMutexService,
@@ -40,7 +37,7 @@ export class PointService {
   }
 
   async createChargeRequest(userId: string, amount: Point): Promise<PointChargeRequest> {
-    const chargeRequestId = this.idGenerator.generate();
+    const chargeRequestId = ''; // TODO: Prisma에서 생성된 ID 사용
     const chargeRequest = PointChargeRequest.create(chargeRequestId, userId, amount);
 
     return await this.pointRepository.saveChargeRequest(chargeRequest);
@@ -91,7 +88,7 @@ export class PointService {
 
       pointBalance.charge(chargeRequest.getAmount());
 
-      const transactionId = this.idGenerator.generate();
+      const transactionId = ''; // TODO: Prisma에서 생성된 ID 사용
       const transaction = PointTransaction.create(
         transactionId,
         userId,

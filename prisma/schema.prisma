@@ -102,7 +102,7 @@ model Coupon {
   couponName        String       @map("coupon_name") @db.VarChar(200)
   discountType      DiscountType @map("discount_type")
   discountValue     Decimal      @map("discount_value") @db.Decimal(10, 2)
-  maxDiscountAmount Decimal      @map("max_discount_amount") @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?     @map("max_discount_amount") @db.Decimal(10, 2)
   minOrderAmount    Decimal      @map("min_order_amount") @db.Decimal(10, 2)
   totalQuantity     Int          @map("total_quantity")
   issuedQuantity    Int          @default(0) @map("issued_quantity")
@@ -123,7 +123,6 @@ model UserCoupon {
   userId       BigInt    @map("user_id")
   couponId     BigInt    @map("coupon_id")
   orderId      BigInt?   @map("order_id")
-  isUsed       Boolean   @default(false) @map("is_used")
   issuedAt     DateTime  @map("issued_at") @db.DateTime(3)
   expiresAt    DateTime  @map("expires_at") @db.DateTime(3)
   usedAt       DateTime? @map("used_at") @db.DateTime(3)
@@ -151,6 +150,8 @@ model Order {
   finalPrice    Decimal     @map("final_price") @db.Decimal(10, 2)
   createdAt     DateTime    @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.DateTime(3)
+  completedAt   DateTime?   @map("completed_at") @db.DateTime(3)
+  cancelledAt   DateTime?   @map("cancelled_at") @db.DateTime(3)
 
   // Relations
   user                 User                  @relation(fields: [userId], references: [userId])
@@ -298,4 +299,5 @@ enum PaymentStatus {
 enum TransactionType {
   CHARGE
   USE
+  REFUND
 }

@@ -1,14 +1,13 @@
 export class AddCartItemRequestDto {
-  userId: string;
-  productOptionId: string;
+  userId: number;
+  productOptionId: number;
   quantity: number;
 }
 
 export class AddCartItemResponseDto {
-  cartItemId: string;
-  productOptionId: string;
+  cartItemId: number;
+  productOptionId: number;
   quantity: number;
-  savedPrice: number;
   currentStock: number;
   createdAt: Date;
 }

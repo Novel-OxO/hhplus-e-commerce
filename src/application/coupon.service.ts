@@ -1,13 +1,11 @@
 import { Mutex } from 'async-mutex';
 import { Inject, Injectable } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@/common/exceptions';
-import { CouponHistory } from '@/domain/coupon/coupon-history.entity';
 import { Coupon } from '@/domain/coupon/coupon.entity';
 import { COUPON_REPOSITORY, type CouponRepository } from '@/domain/coupon/coupon.repository';
 import { UserCouponStatistics } from '@/domain/coupon/user-coupon-statistics.vo';
 import { UserCoupon } from '@/domain/coupon/user-coupon.entity';
 import { ValidityPeriod } from '@/domain/coupon/validity-period.vo';
-import { ID_GENERATOR, type IdGenerator } from '@/infrastructure/id-generator/id-generator.interface';
 
 @Injectable()
 export class CouponService {
@@ -16,8 +14,6 @@ export class CouponService {
   constructor(
     @Inject(COUPON_REPOSITORY)
     private readonly couponRepository: CouponRepository,
-    @Inject(ID_GENERATOR)
-    private readonly idGenerator: IdGenerator,
   ) {}
 
   async issueCoupon(couponId: string, userId: string, issuedAt: Date = new Date()): Promise<UserCoupon> {
@@ -43,7 +39,7 @@ export class CouponService {
       await this.couponRepository.saveCoupon(coupon);
 
       const userCoupon = new UserCoupon(
-        this.idGenerator.generate(),
+        '', // TODO: Prisma에서 생성된 ID 사용
         userId,
         couponId,
         issuedAt,
@@ -76,18 +72,6 @@ export class CouponService {
 
   async getMyAvailableCoupons(userId: string, at: Date = new Date()): Promise<UserCoupon[]> {
     return await this.couponRepository.findAvailableUserCouponsByUserId(userId, at);
-  }
-
-  async getMyCouponHistory(userId: string): Promise<CouponHistory[]> {
-    return await this.couponRepository.findHistoriesByUserId(userId);
-  }
-
-  async getMyCouponHistoryWithPagination(
-    userId: string,
-    page: number,
-    limit: number,
-  ): Promise<{ histories: CouponHistory[]; total: number }> {
-    return await this.couponRepository.findHistoriesByUserIdWithPagination(userId, page, limit);
   }
 
   async getCouponById(couponId: string): Promise<Coupon> {

@@ -16,7 +16,7 @@ export class ProductWithOptions {
   }
 
   findOptionById(optionId: string): ProductOption | undefined {
-    return this.options.find((option) => option.getId() === optionId);
+    return this.options.find((option) => String(option.getProductOptionId()) === optionId.replace('option-', ''));
   }
 
   hasOptions(): boolean {

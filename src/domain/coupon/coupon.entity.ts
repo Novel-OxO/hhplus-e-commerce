@@ -1,8 +1,8 @@
+import { BadRequestException } from '@/common/exceptions';
 import { Point } from '@/domain/point/point.vo';
 import { CouponQuantity } from './coupon-quantity.vo';
 import { DiscountValue } from './discount-value.vo';
 import { ValidityPeriod } from './validity-period.vo';
-import { BadRequestException } from '@/common/exceptions';
 
 export class Coupon {
   private quantity: CouponQuantity;
@@ -16,6 +16,7 @@ export class Coupon {
     quantity: CouponQuantity,
     private readonly validityPeriod: ValidityPeriod,
     private readonly createdAt: Date,
+    private readonly updatedAt: Date,
   ) {
     this.quantity = quantity;
   }
@@ -77,5 +78,9 @@ export class Coupon {
 
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  getUpdatedAt(): Date {
+    return this.updatedAt;
   }
 }

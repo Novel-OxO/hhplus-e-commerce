@@ -1,4 +1,3 @@
-import { CouponHistory } from './coupon-history.entity';
 import { Coupon } from './coupon.entity';
 import { UserCoupon } from './user-coupon.entity';
 
@@ -15,12 +14,4 @@ export interface CouponRepository {
   findAvailableUserCouponsByUserId(userId: string, at: Date): Promise<UserCoupon[]>;
   existsUserCouponByCouponIdAndUserId(couponId: string, userId: string): Promise<boolean>;
   saveUserCoupon(userCoupon: UserCoupon): Promise<void>;
-
-  findHistoriesByUserId(userId: string): Promise<CouponHistory[]>;
-  findHistoriesByUserIdWithPagination(
-    userId: string,
-    page: number,
-    limit: number,
-  ): Promise<{ histories: CouponHistory[]; total: number }>;
-  saveHistory(history: CouponHistory): Promise<void>;
 }

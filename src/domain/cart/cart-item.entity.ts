@@ -1,34 +1,30 @@
 export class CartItem {
   constructor(
-    private readonly id: string,
-    private readonly userId: string,
-    private readonly productOptionId: string,
+    private readonly cartItemId: number,
+    private readonly userId: number,
+    private readonly productOptionId: number,
     private quantity: number,
-    private readonly savedPrice: number,
     private readonly createdAt: Date,
+    private readonly updatedAt: Date,
   ) {}
 
   increaseQuantity(amount: number): void {
     this.quantity += amount;
   }
 
-  isPriceChanged(currentPrice: number): boolean {
-    return this.savedPrice !== currentPrice;
-  }
-
   calculateSubtotal(currentPrice: number): number {
     return currentPrice * this.quantity;
   }
 
-  getId(): string {
-    return this.id;
+  getCartItemId(): number {
+    return this.cartItemId;
   }
 
-  getUserId(): string {
+  getUserId(): number {
     return this.userId;
   }
 
-  getProductOptionId(): string {
+  getProductOptionId(): number {
     return this.productOptionId;
   }
 
@@ -36,11 +32,11 @@ export class CartItem {
     return this.quantity;
   }
 
-  getSavedPrice(): number {
-    return this.savedPrice;
-  }
-
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  getUpdatedAt(): Date {
+    return this.updatedAt;
   }
 }
