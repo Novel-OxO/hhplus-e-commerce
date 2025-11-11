@@ -3,14 +3,15 @@ import { CartItem } from '@/domain/cart/cart-item.entity';
 import { CartRepository } from '@/domain/cart/cart.repository';
 import { ProductOption } from '@/domain/product/product-option.entity';
 import { ProductQuantity } from '@/domain/product/product-quantity.vo';
-import { PrismaService } from './prisma.service';
+import { PrismaProvider } from './prisma-provider.service';
 
 @Injectable()
 export class PrismaCartRepository implements CartRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaProvider: PrismaProvider) {}
 
   async findByUserId(userId: number): Promise<CartItem[]> {
-    const cartItems = await this.prisma.cartItem.findMany({
+    const prisma = this.prismaProvider.get();
+    const cartItems = await prisma.cartItem.findMany({
       where: { userId: BigInt(userId) },
       include: {
         productOption: {
@@ -28,7 +29,8 @@ export class PrismaCartRepository implements CartRepository {
   }
 
   async findById(cartItemId: number): Promise<CartItem | null> {
-    const cartItem = await this.prisma.cartItem.findUnique({
+    const prisma = this.prismaProvider.get();
+    const cartItem = await prisma.cartItem.findUnique({
       where: { cartItemId: BigInt(cartItemId) },
       include: {
         productOption: {
@@ -47,7 +49,8 @@ export class PrismaCartRepository implements CartRepository {
   }
 
   async findByUserIdAndProductOptionId(userId: number, productOptionId: number): Promise<CartItem | null> {
-    const cartItem = await this.prisma.cartItem.findFirst({
+    const prisma = this.prismaProvider.get();
+    const cartItem = await prisma.cartItem.findFirst({
       where: {
         userId: BigInt(userId),
         productOptionId: BigInt(productOptionId),
@@ -69,11 +72,12 @@ export class PrismaCartRepository implements CartRepository {
   }
 
   async save(cartItem: CartItem): Promise<CartItem> {
+    const prisma = this.prismaProvider.get();
     const cartItemId = cartItem.getCartItemId();
 
     if (cartItemId) {
       // Update existing cart item
-      const updated = await this.prisma.cartItem.update({
+      const updated = await prisma.cartItem.update({
         where: { cartItemId: BigInt(cartItemId) },
         data: {
           quantity: cartItem.getQuantity().getValue(),
@@ -92,7 +96,7 @@ export class PrismaCartRepository implements CartRepository {
       return this.toCartItem(updated);
     } else {
       // Create new cart item
-      const created = await this.prisma.cartItem.create({
+      const created = await prisma.cartItem.create({
         data: {
           userId: BigInt(cartItem.getUserId()),
           productOptionId: BigInt(cartItem.getProductOption().getProductOptionId()),
@@ -115,19 +119,22 @@ export class PrismaCartRepository implements CartRepository {
   }
 
   async delete(cartItemId: number): Promise<void> {
-    await this.prisma.cartItem.delete({
+    const prisma = this.prismaProvider.get();
+    await prisma.cartItem.delete({
       where: { cartItemId: BigInt(cartItemId) },
     });
   }
 
   async deleteByUserId(userId: number): Promise<void> {
-    await this.prisma.cartItem.deleteMany({
+    const prisma = this.prismaProvider.get();
+    await prisma.cartItem.deleteMany({
       where: { userId: BigInt(userId) },
     });
   }
 
   async deleteByCartIdAndUserId(cartItemId: number, userId: number): Promise<void> {
-    await this.prisma.cartItem.deleteMany({
+    const prisma = this.prismaProvider.get();
+    await prisma.cartItem.deleteMany({
       where: {
         cartItemId: BigInt(cartItemId),
         userId: BigInt(userId),

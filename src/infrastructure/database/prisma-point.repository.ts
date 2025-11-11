@@ -6,14 +6,15 @@ import { PointChargeRequest } from '@/domain/point/point-charge-request.entity';
 import { PointTransaction } from '@/domain/point/point-transaction.entity';
 import { PointRepository } from '@/domain/point/point.repository';
 import { Point } from '@/domain/point/point.vo';
-import { PrismaService } from './prisma.service';
+import { PrismaProvider } from './prisma-provider.service';
 
 @Injectable()
 export class PrismaPointRepository implements PointRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaProvider: PrismaProvider) {}
 
   async findBalanceByUserId(userId: number): Promise<PointBalance | null> {
-    const balance = await this.prisma.pointBalance.findUnique({
+    const prisma = this.prismaProvider.get();
+    const balance = await prisma.pointBalance.findUnique({
       where: { userId: BigInt(userId) },
     });
 
@@ -35,7 +36,8 @@ export class PrismaPointRepository implements PointRepository {
   }
 
   async saveBalance(balance: PointBalance): Promise<PointBalance> {
-    const saved = await this.prisma.pointBalance.upsert({
+    const prisma = this.prismaProvider.get();
+    const saved = await prisma.pointBalance.upsert({
       where: { userId: BigInt(balance.getUserId()) },
       create: {
         userId: BigInt(balance.getUserId()),
@@ -52,7 +54,8 @@ export class PrismaPointRepository implements PointRepository {
   }
 
   async saveChargeRequest(chargeRequest: PointChargeRequest): Promise<PointChargeRequest> {
-    const saved = await this.prisma.pointChargeRequest.create({
+    const prisma = this.prismaProvider.get();
+    const saved = await prisma.pointChargeRequest.create({
       data: {
         userId: BigInt(chargeRequest.getUserId()),
         amount: chargeRequest.getAmount().getValue(),
@@ -66,7 +69,8 @@ export class PrismaPointRepository implements PointRepository {
   }
 
   async findChargeRequestById(chargeRequestId: number): Promise<PointChargeRequest | null> {
-    const chargeRequest = await this.prisma.pointChargeRequest.findUnique({
+    const prisma = this.prismaProvider.get();
+    const chargeRequest = await prisma.pointChargeRequest.findUnique({
       where: { chargeRequestId: BigInt(chargeRequestId) },
     });
 
@@ -88,7 +92,8 @@ export class PrismaPointRepository implements PointRepository {
   }
 
   async createTransaction(transaction: PointTransaction): Promise<PointTransaction> {
-    const saved = await this.prisma.pointTransaction.create({
+    const prisma = this.prismaProvider.get();
+    const saved = await prisma.pointTransaction.create({
       data: {
         userId: BigInt(transaction.getUserId()),
         transactionType: transaction.getTransactionType() as any,
@@ -103,7 +108,8 @@ export class PrismaPointRepository implements PointRepository {
   }
 
   async updateChargeRequestStatus(chargeRequestId: number, status: ChargeStatus): Promise<PointChargeRequest> {
-    const updated = await this.prisma.pointChargeRequest.update({
+    const prisma = this.prismaProvider.get();
+    const updated = await prisma.pointChargeRequest.update({
       where: { chargeRequestId: BigInt(chargeRequestId) },
       data: {
         status: status as any,

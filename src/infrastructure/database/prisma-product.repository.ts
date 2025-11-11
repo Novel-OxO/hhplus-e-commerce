@@ -10,14 +10,15 @@ import { ProductViewLog } from '@/domain/product/product-view-log.entity';
 import { ProductWithOptions } from '@/domain/product/product-with-options.vo';
 import { Product } from '@/domain/product/product.entity';
 import { ProductRepository } from '@/domain/product/product.repository';
-import { PrismaService } from './prisma.service';
+import { PrismaProvider } from './prisma-provider.service';
 
 @Injectable()
 export class PrismaProductRepository implements ProductRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaProvider: PrismaProvider) {}
 
   async findByIdOrElseThrow(productId: number): Promise<Product> {
-    const product = await this.prisma.product.findUnique({
+    const prisma = this.prismaProvider.get();
+    const product = await prisma.product.findUnique({
       where: { productId: BigInt(productId) },
     });
 
@@ -29,7 +30,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findWithOptionsByProductIdOrElseThrow(productId: number): Promise<ProductWithOptions> {
-    const product = await this.prisma.product.findUnique({
+    const prisma = this.prismaProvider.get();
+    const product = await prisma.product.findUnique({
       where: { productId: BigInt(productId) },
       include: {
         productOptions: true,
@@ -47,7 +49,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findOptionByIdOrElseThrow(optionId: number): Promise<ProductOption> {
-    const option = await this.prisma.productOption.findUnique({
+    const prisma = this.prismaProvider.get();
+    const option = await prisma.productOption.findUnique({
       where: { productOptionId: BigInt(optionId) },
       include: {
         product: true,
@@ -62,7 +65,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findOptionByOptionIdAndProductIdOrElseThrow(optionId: number, productId: number): Promise<ProductOption> {
-    const option = await this.prisma.productOption.findFirst({
+    const prisma = this.prismaProvider.get();
+    const option = await prisma.productOption.findFirst({
       where: {
         productOptionId: BigInt(optionId),
         productId: BigInt(productId),
@@ -80,8 +84,9 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findDetailsByOptionIds(optionIds: string[]): Promise<ProductDetail[]> {
+    const prisma = this.prismaProvider.get();
     const numericOptionIds = optionIds.map((id) => BigInt(id));
-    const options = await this.prisma.productOption.findMany({
+    const options = await prisma.productOption.findMany({
       where: {
         productOptionId: {
           in: numericOptionIds,
@@ -100,7 +105,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async saveViewLog(viewLog: ProductViewLog): Promise<ProductViewLog> {
-    const saved = await this.prisma.productViewLog.create({
+    const prisma = this.prismaProvider.get();
+    const saved = await prisma.productViewLog.create({
       data: {
         productId: BigInt(viewLog.getProductId()),
         userId: viewLog.getUserId() ? BigInt(viewLog.getUserId()!) : null,
@@ -117,13 +123,14 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async saveRanking(ranking: ProductRanking): Promise<ProductRanking> {
+    const prisma = this.prismaProvider.get();
     const normalizedDate = normalizeToDateOnly(ranking.getCalculatedAt());
     const productId = BigInt(ranking.getProductId());
     const totalViews = BigInt(ranking.getTotalViews());
     const rankingPosition = ranking.getRankingPosition();
 
     try {
-      await this.prisma.productRanking.update({
+      await prisma.productRanking.update({
         where: {
           productId_calculatedAt: {
             productId,
@@ -137,7 +144,7 @@ export class PrismaProductRepository implements ProductRepository {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        await this.prisma.productRanking.create({
+        await prisma.productRanking.create({
           data: {
             productId,
             totalViews,
@@ -154,12 +161,13 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async aggregateViewsForDate(targetDate: Date): Promise<Array<ProductViewCount>> {
+    const prisma = this.prismaProvider.get();
     const startDate = new Date(targetDate);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    const results = await this.prisma.productViewLog.groupBy({
+    const results = await prisma.productViewLog.groupBy({
       by: ['productId'],
       where: {
         viewedAt: {
@@ -176,9 +184,10 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findRankingsByDate(targetDate: Date, limit: number): Promise<ProductRanking[]> {
+    const prisma = this.prismaProvider.get();
     const normalizedDate = normalizeToDateOnly(targetDate);
 
-    const rankings = await this.prisma.productRanking.findMany({
+    const rankings = await prisma.productRanking.findMany({
       where: {
         calculatedAt: normalizedDate,
       },
@@ -198,7 +207,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findProductsByIds(productIds: number[]): Promise<Product[]> {
-    const products = await this.prisma.product.findMany({
+    const prisma = this.prismaProvider.get();
+    const products = await prisma.product.findMany({
       where: {
         productId: {
           in: productIds.map((id) => BigInt(id)),
