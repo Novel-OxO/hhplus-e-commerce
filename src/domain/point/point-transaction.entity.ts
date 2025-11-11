@@ -1,33 +1,33 @@
-import { Point } from './point.vo';
 import { TransactionType } from './transaction-type.vo';
 
 export class PointTransaction {
   constructor(
-    private readonly transactionId: string,
-    private readonly userId: string,
+    private readonly userId: number,
     private readonly transactionType: TransactionType,
-    private readonly amount: Point,
-    private readonly balanceAfter: Point,
-    private readonly referenceId: string,
-    private readonly createdAt: Date,
+    private readonly amount: number,
+    private readonly balanceAfter: number,
+    private readonly createdAt: Date = new Date(),
+    private readonly transactionId?: string,
   ) {}
 
   static create(
-    transactionId: string,
-    userId: string,
+    userId: number,
     transactionType: TransactionType,
-    amount: Point,
-    balanceAfter: Point,
-    referenceId: string,
+    amount: number,
+    balanceAfter: number,
   ): PointTransaction {
-    return new PointTransaction(transactionId, userId, transactionType, amount, balanceAfter, referenceId, new Date());
+    return new PointTransaction(userId, transactionType, amount, balanceAfter);
   }
 
-  getTransactionId(): string {
+  static use(userId: number, amount: number, balanceAfter: number): PointTransaction {
+    return new PointTransaction(userId, TransactionType.USE, amount, balanceAfter);
+  }
+
+  getTransactionId(): string | undefined {
     return this.transactionId;
   }
 
-  getUserId(): string {
+  getUserId(): number {
     return this.userId;
   }
 
@@ -35,16 +35,12 @@ export class PointTransaction {
     return this.transactionType;
   }
 
-  getAmount(): Point {
+  getAmount(): number {
     return this.amount;
   }
 
-  getBalanceAfter(): Point {
+  getBalanceAfter(): number {
     return this.balanceAfter;
-  }
-
-  getReferenceId(): string {
-    return this.referenceId;
   }
 
   getCreatedAt(): Date {

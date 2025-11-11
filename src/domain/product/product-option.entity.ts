@@ -2,10 +2,11 @@ import { BadRequestException } from '@/common/exceptions';
 
 export class ProductOption {
   constructor(
-    private readonly id: string,
-    private readonly productId: string,
-    private readonly name: string,
-    private readonly additionalPrice: number,
+    private readonly productOptionId: number,
+    private readonly productId: number,
+    private readonly optionName: string,
+    private readonly sku: string,
+    private readonly price: number,
     private stock: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
@@ -29,24 +30,28 @@ export class ProductOption {
     this.stock += quantity;
   }
 
-  getId(): string {
-    return this.id;
+  getProductOptionId(): number {
+    return this.productOptionId;
   }
 
-  getProductId(): string {
+  getProductId(): number {
     return this.productId;
   }
 
-  getName(): string {
-    return this.name;
+  getOptionName(): string {
+    return this.optionName;
   }
 
-  getAdditionalPrice(): number {
-    return this.additionalPrice;
+  getSku(): string {
+    return this.sku;
   }
 
   getStock(): number {
     return this.stock;
+  }
+
+  getPrice(): number {
+    return this.price;
   }
 
   getCreatedAt(): Date {

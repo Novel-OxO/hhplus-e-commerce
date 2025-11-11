@@ -1,26 +1,20 @@
-import { CouponHistory } from './coupon-history.entity';
 import { Coupon } from './coupon.entity';
 import { UserCoupon } from './user-coupon.entity';
 
 export const COUPON_REPOSITORY = Symbol('COUPON_REPOSITORY');
 
 export interface CouponRepository {
-  findCouponById(id: string): Promise<Coupon | null>;
+  findCouponById(id: number): Promise<Coupon | null>;
   findAvailableCoupons(at: Date): Promise<Coupon[]>;
   saveCoupon(coupon: Coupon): Promise<void>;
-  findCouponByIdWithLock(id: string): Promise<Coupon | null>;
+  findCouponByIdWithLock(id: number): Promise<Coupon | null>;
+  findCouponByIdWithLockOrElseThrow(id: number): Promise<Coupon>;
 
-  findUserCouponById(id: string): Promise<UserCoupon | null>;
-  findUserCouponsByUserId(userId: string): Promise<UserCoupon[]>;
-  findAvailableUserCouponsByUserId(userId: string, at: Date): Promise<UserCoupon[]>;
-  existsUserCouponByCouponIdAndUserId(couponId: string, userId: string): Promise<boolean>;
+  findUserCouponById(id: number): Promise<UserCoupon | null>;
+  findUserCouponByIdOrElseThrow(id: number): Promise<UserCoupon>;
+  findCouponByUserCouponIdOrElseThrow(userCouponId: number): Promise<Coupon>;
+  findUserCouponsByUserId(userId: number): Promise<UserCoupon[]>;
+  findAvailableUserCouponsByUserId(userId: number, at: Date): Promise<UserCoupon[]>;
+  existsUserCouponByCouponIdAndUserId(couponId: number, userId: number): Promise<boolean>;
   saveUserCoupon(userCoupon: UserCoupon): Promise<void>;
-
-  findHistoriesByUserId(userId: string): Promise<CouponHistory[]>;
-  findHistoriesByUserIdWithPagination(
-    userId: string,
-    page: number,
-    limit: number,
-  ): Promise<{ histories: CouponHistory[]; total: number }>;
-  saveHistory(history: CouponHistory): Promise<void>;
 }

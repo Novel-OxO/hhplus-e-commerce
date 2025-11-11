@@ -1,13 +1,14 @@
 # 패션 커머스 시스템 - ERD 설계
 
-## PK 전략 Snowflake ID
+## PK 전략: BIGINT AUTO_INCREMENT
 
-모든 테이블의 PK는 Snowflake ID (BIGINT) 사용
+모든 테이블의 PK는 BIGINT AUTO_INCREMENT 사용
 
 ### 선택 이유
 
-- **현재**: 모놀리식 구조이지만 향후 MSA 확장 가능성 고려
-- **분산 환경 대비**: 서비스 분리 시 ID 충돌 없이 독립적 생성 가능
+- **단순성**: MySQL의 표준 AUTO_INCREMENT 사용으로 설정 및 관리 간소화
+- **성능**: 순차적 ID 생성으로 인덱스 효율성 향상
+- **충분한 범위**: BIGINT로 최대 9,223,372,036,854,775,807까지 표현 가능
 
 ## 스냅샷 OrderItem
 
@@ -84,183 +85,155 @@ erDiagram
     user_coupons ||--o| coupon_usage_history : "used_in"
 
     users {
-        bigint user_id PK "Snowflake ID"
-        datetime created_at
-        datetime updated_at
+        bigint user_id PK "AUTO_INCREMENT"
+        varchar name
+        varchar email
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     products {
-        bigint product_id PK "Snowflake ID"
+        bigint product_id PK "AUTO_INCREMENT"
         varchar product_name
         text description
-        decimal base_price
+        decimal base_price "10,2"
         bigint view_count "조회수"
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     product_options {
-        bigint product_option_id PK "Snowflake ID"
-        bigint product_id FK
+        bigint product_option_id PK "AUTO_INCREMENT"
+        bigint product_id
         varchar option_name
-        varchar sku UK
-        decimal additional_price
+        varchar sku
         int stock_quantity
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     cart_items {
-        bigint cart_item_id PK "Snowflake ID"
-        bigint user_id FK
-        bigint product_option_id FK
+        bigint cart_item_id PK "AUTO_INCREMENT"
+        bigint user_id
+        bigint product_option_id
         int quantity
-        decimal saved_price
-        datetime created_at
-        datetime updated_at
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     orders {
-        bigint order_id PK "Snowflake ID"
-        bigint user_id FK
-        bigint user_coupon_id FK "사용한 쿠폰"
+        bigint order_id PK "AUTO_INCREMENT"
+        bigint user_id
+        bigint user_coupon_id "사용한 쿠폰"
         enum order_status "PENDING, COMPLETED, CANCELLED"
-        decimal total_amount "주문 금액"
-        decimal discount_amount "쿠폰 할인 금액"
-        decimal final_amount "최종 결제 금액"
-        datetime created_at
-        datetime updated_at
+        decimal total_price "주문 금액"
+        decimal discount_price "쿠폰 할인 금액"
+        decimal final_price "최종 결제 금액"
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     order_items {
-        bigint order_item_id PK "Snowflake ID"
-        bigint order_id FK
-        bigint product_option_id "참조만, FK 아님"
+        bigint order_item_id PK "AUTO_INCREMENT"
+        bigint order_id
+        bigint product_option_id "참조만"
         varchar product_name "스냅샷"
         varchar option_name "스냅샷"
         varchar sku "스냅샷"
         decimal price "스냅샷"
         int quantity
         decimal subtotal
-        datetime created_at
+        datetime(3) created_at
     }
 
     payments {
-        bigint payment_id PK "Snowflake ID"
-        bigint charge_request_id FK "충전 요청 ID"
-        varchar pg_payment_id UK "PG사 결제 ID"
+        bigint payment_id PK "AUTO_INCREMENT"
+        bigint charge_request_id "충전 요청 ID"
+        varchar pg_payment_id "PG사 결제 ID"
         enum payment_status "SUCCESS, FAILED, PENDING"
         decimal amount "결제 금액"
-        datetime paid_at
-        datetime created_at
-        datetime updated_at
+        datetime(3) paid_at
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     point_balances {
-        bigint user_id PK "Snowflake ID, also FK to users"
+        bigint user_id PK
         decimal balance "현재 잔액"
-        datetime updated_at
+        datetime(3) updated_at
     }
 
     point_charge_requests {
-        bigint charge_request_id PK "Snowflake ID"
-        bigint user_id FK
+        bigint charge_request_id PK "AUTO_INCREMENT"
+        bigint user_id
         decimal amount "충전 요청 금액"
         enum status "PENDING, COMPLETED, FAILED"
-        datetime created_at
-        datetime completed_at
+        datetime(3) created_at
+        datetime(3) completed_at
     }
 
     point_transactions {
-        bigint transaction_id PK "Snowflake ID"
-        bigint user_id FK
+        bigint transaction_id PK "AUTO_INCREMENT"
+        bigint user_id
         enum transaction_type "CHARGE, USE"
         decimal amount "거래 금액"
         decimal balance_after "거래 후 잔액"
         bigint reference_id "충전요청ID 또는 주문ID"
-        datetime created_at
+        datetime(3) created_at
     }
 
     coupons {
-        bigint coupon_id PK "Snowflake ID"
+        bigint coupon_id PK "AUTO_INCREMENT"
         varchar coupon_name
-        enum discount_type
+        enum discount_type "PERCENTAGE, FIXED_AMOUNT"
         decimal discount_value
         decimal max_discount_amount
         decimal min_order_amount
         int total_quantity
         int issued_quantity
-        datetime valid_from
-        datetime valid_until
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        datetime(3) valid_from
+        datetime(3) valid_until
+        datetime(3) created_at
+        datetime(3) updated_at
     }
 
     user_coupons {
-        bigint user_coupon_id PK "Snowflake ID"
-        bigint user_id FK
-        bigint coupon_id FK
-        bigint order_id FK "사용된 주문 ID"
+        bigint user_coupon_id PK "AUTO_INCREMENT"
+        bigint user_id
+        bigint coupon_id
+        bigint order_id "사용된 주문 ID"
         boolean is_used
-        datetime issued_at
-        datetime expires_at
-        datetime used_at
+        datetime(3) issued_at
+        datetime(3) expires_at
+        datetime(3) used_at
     }
 
     coupon_usage_history {
-        bigint usage_id PK "Snowflake ID"
-        bigint user_coupon_id FK "UK"
-        bigint order_id FK
-        decimal discount_amount
+        bigint usage_id PK "AUTO_INCREMENT"
+        bigint user_coupon_id
+        bigint order_id
+        decimal discount_price
         enum status "USED, CANCELLED"
-        datetime used_at
+        datetime(3) used_at
     }
 ```
 
-## 인덱스 설계
+## 제약 조건 정책
 
-### 성능 최적화를 위한 인덱스
+### 데이터베이스 레벨 제약 없음
 
-```sql
--- 1. 인기 상품 조회 (최근 3일, 조회수 기반)
-CREATE INDEX idx_products_view_count_created
-ON products(view_count DESC, created_at DESC)
-WHERE is_active = true;
+현재 스키마는 **최소한의 제약 조건**만 유지합니다:
 
--- 2. 상품 옵션 조회 (상품별 옵션 목록)
-CREATE INDEX idx_product_options_product_id
-ON product_options(product_id)
-WHERE is_active = true;
+- **PRIMARY KEY만 존재**: 각 테이블의 PK만 정의
+- **외래키 없음**: 락 전파 문제 방지를 위해 DB 레벨 FK 제약 없음
+- **인덱스 없음**: 성능 최적화는 필요 시 추가
+- **NOT NULL 없음**: 애플리케이션 레벨에서 검증
+- **DEFAULT 없음**: 애플리케이션 레벨에서 설정
+- **ON UPDATE 트리거 없음**: 명시적 업데이트만 허용
 
--- 3. 장바구니 조회 (사용자별)
-CREATE INDEX idx_cart_items_user_id
-ON cart_items(user_id);
+### 설계 철학
 
--- 4. 주문 조회 (사용자별, 최신순)
-CREATE INDEX idx_orders_user_id_created
-ON orders(user_id, created_at DESC);
-
--- 5. 주문 아이템 조회 (주문별)
-CREATE INDEX idx_order_items_order_id
-ON order_items(order_id);
-
--- 6. 포인트 거래 내역 조회 (사용자별, 최신순)
-CREATE INDEX idx_point_transactions_user_created
-ON point_transactions(user_id, created_at DESC);
-
--- 7. 쿠폰 발급 내역 조회 (사용자별)
-CREATE INDEX idx_user_coupons_user_id
-ON user_coupons(user_id, is_used, expires_at);
-
--- 8. 쿠폰 발급 수량 체크 (동시성 제어)
-CREATE INDEX idx_coupons_issued_quantity
-ON coupons(coupon_id, issued_quantity, total_quantity)
-WHERE is_active = true;
-
--- 9. 포인트 충전 요청 조회
-CREATE INDEX idx_charge_requests_user_status
-ON point_charge_requests(user_id, status, created_at DESC);
-```
+1. **애플리케이션 레벨 제어**: 모든 비즈니스 로직과 제약은 애플리케이션에서 관리
+2. **동시성 제어**: DB 락 전파 방지로 높은 동시성 확보
+3. **유연성**: 스키마 변경 최소화, 빠른 마이그레이션 가능
+4. **명시성**: 암묵적 동작(trigger, cascade) 없이 명시적 코드로 관리

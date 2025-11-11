@@ -1,46 +1,61 @@
+import { ProductOption } from '@/domain/product/product-option.entity';
+import { ProductQuantity } from '@/domain/product/product-quantity.vo';
+
 export class CartItem {
   constructor(
-    private readonly id: string,
-    private readonly userId: string,
-    private readonly productOptionId: string,
-    private quantity: number,
-    private readonly savedPrice: number,
+    private readonly userId: number,
+    private readonly productOption: ProductOption,
+    private quantity: ProductQuantity,
+    private readonly price: number,
     private readonly createdAt: Date,
+    private readonly updatedAt: Date,
+    private cartItemId?: number,
   ) {}
 
-  increaseQuantity(amount: number): void {
-    this.quantity += amount;
+  static create(
+    userId: number,
+    productOption: ProductOption,
+    quantity: ProductQuantity,
+    price: number,
+    createdAt: Date = new Date(),
+    updatedAt: Date = new Date(),
+  ) {
+    return new CartItem(userId, productOption, quantity, price, createdAt, updatedAt, undefined);
   }
 
-  isPriceChanged(currentPrice: number): boolean {
-    return this.savedPrice !== currentPrice;
+  increaseQuantity(amount: ProductQuantity): void {
+    this.quantity = this.quantity.increase(amount.getValue());
   }
 
-  calculateSubtotal(currentPrice: number): number {
-    return currentPrice * this.quantity;
+  calculateSubtotal(): number {
+    return this.price * this.quantity.getValue();
   }
 
-  getId(): string {
-    return this.id;
+  getPrice(): number {
+    return this.price;
   }
 
-  getUserId(): string {
+  getCartItemId(): number | undefined {
+    return this.cartItemId;
+  }
+
+  getUserId(): number {
     return this.userId;
   }
 
-  getProductOptionId(): string {
-    return this.productOptionId;
+  getProductOption(): ProductOption {
+    return this.productOption;
   }
 
-  getQuantity(): number {
+  getQuantity(): ProductQuantity {
     return this.quantity;
-  }
-
-  getSavedPrice(): number {
-    return this.savedPrice;
   }
 
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  getUpdatedAt(): Date {
+    return this.updatedAt;
   }
 }

@@ -5,7 +5,7 @@ export class PointBalance {
   private updatedAt: Date;
 
   constructor(
-    private readonly userId: string,
+    private readonly userId: number,
     balance: Point,
     updatedAt?: Date,
   ) {
@@ -23,7 +23,7 @@ export class PointBalance {
     this.updatedAt = new Date();
   }
 
-  getUserId(): string {
+  getUserId(): number {
     return this.userId;
   }
 

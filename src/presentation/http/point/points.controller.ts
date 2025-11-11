@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PointService } from '@/application/point.service';
+import { PointService } from '@/application/point/point.service';
 import { Point } from '@/domain/point/point.vo';
 import { ApiChargeRequest, ApiGetBalance, ApiVerifyCharge } from '@/presentation/http/point/points.swagger';
 

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CartService } from '@/application/cart.service';
+import { CartService } from '@/application/cart/cart.service';
 import { ApiAddCartItem, ApiGetCart, ApiDeleteCartItem, ApiClearCart } from '@/presentation/http/cart/carts.swagger';
 import { AddCartItemRequestDto, AddCartItemResponseDto } from '@/presentation/http/cart/dto/add-cart-item.dto';
 import { ClearCartResponseDto } from '@/presentation/http/cart/dto/clear-cart.dto';
@@ -22,10 +22,9 @@ export class CartsController {
     );
 
     return {
-      cartItemId: cartItem.getId(),
+      cartItemId: cartItem.getCartItemId(),
       productOptionId: cartItem.getProductOptionId(),
       quantity: cartItem.getQuantity(),
-      savedPrice: cartItem.getSavedPrice(),
       currentStock,
       createdAt: cartItem.getCreatedAt(),
     };
@@ -34,17 +33,16 @@ export class CartsController {
   @Get()
   @ApiGetCart()
   async getCart(@Query('userId') userId: string): Promise<GetCartResponseDto> {
-    const { items, totalAmount } = await this.cartService.getCart(userId);
+    const numericUserId = parseInt(userId, 10);
+    const { items, totalAmount } = await this.cartService.getCart(numericUserId);
 
     return {
       items: items.map((item) => ({
-        cartItemId: item.cartItem.getId(),
+        cartItemId: item.cartItem.getCartItemId(),
         productOptionId: item.cartItem.getProductOptionId(),
         quantity: item.cartItem.getQuantity(),
-        savedPrice: item.cartItem.getSavedPrice(),
         currentPrice: item.currentPrice,
         currentStock: item.currentStock,
-        isPriceChanged: item.isPriceChanged,
         isStockSufficient: item.isStockSufficient,
         subtotal: item.currentPrice * item.cartItem.getQuantity(),
       })),
@@ -59,7 +57,9 @@ export class CartsController {
     @Param('itemId') itemId: string,
     @Query('userId') userId: string,
   ): Promise<DeleteCartItemResponseDto> {
-    await this.cartService.removeCartItem(userId, itemId);
+    const numericUserId = parseInt(userId, 10);
+    const numericItemId = parseInt(itemId, 10);
+    await this.cartService.removeCartItem(numericUserId, numericItemId);
 
     return {
       message: '장바구니 항목이 삭제되었습니다',
@@ -69,7 +69,8 @@ export class CartsController {
   @Delete()
   @ApiClearCart()
   async clearCart(@Query('userId') userId: string): Promise<ClearCartResponseDto> {
-    await this.cartService.clearCart(userId);
+    const numericUserId = parseInt(userId, 10);
+    await this.cartService.clearCart(numericUserId);
 
     return {
       message: '장바구니가 비워졌습니다',

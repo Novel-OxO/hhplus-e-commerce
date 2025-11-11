@@ -1,8 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CouponService } from '@/application/coupon.service';
-import { ApiGetMyCouponHistory, ApiGetMyCoupons, ApiIssueCoupon } from '@/presentation/http/coupon/coupons.swagger';
-import { GetCouponHistoryResponseDto } from '@/presentation/http/coupon/dto/get-coupon-history.dto';
+import { CouponService } from '@/application/coupon/coupon.service';
+import { ApiGetMyCoupons, ApiIssueCoupon } from '@/presentation/http/coupon/coupons.swagger';
 import { GetMyCouponsResponseDto } from '@/presentation/http/coupon/dto/get-my-coupons.dto';
 import { IssueCouponRequestDto, IssueCouponResponseDto } from '@/presentation/http/coupon/dto/issue-coupon.dto';
 
@@ -55,37 +54,6 @@ export class CouponsController {
       availableCount: statistics.getAvailableCount(),
       usedCount: statistics.getUsedCount(),
       expiredCount: statistics.getExpiredCount(),
-    };
-  }
-
-  @Get('users/me/coupons/history')
-  @ApiGetMyCouponHistory()
-  async getMyCouponHistory(
-    @Query('page') page: string,
-    @Query('limit') limit: string,
-    @Query('userId') userId: string,
-  ): Promise<GetCouponHistoryResponseDto> {
-    // TODO Page 관련 로직은 추후 고도화 예정
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-
-    const { histories, total } = await this.couponService.getMyCouponHistoryWithPagination(userId, pageNum, limitNum);
-
-    const totalPages = Math.ceil(total / limitNum);
-
-    return {
-      history: histories.map((h) => ({
-        userCouponId: h.getUserCouponId(),
-        couponId: h.getCouponId(),
-        issuedAt: h.getUsedAt(),
-        usedAt: h.getUsedAt(),
-      })),
-      pagination: {
-        currentPage: pageNum,
-        totalPages,
-        totalCount: total,
-        limit: limitNum,
-      },
     };
   }
 }

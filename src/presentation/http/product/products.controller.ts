@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ProductService } from '@/application/product.service';
+import { ProductRankingService } from '@/application/product/product-ranking.service';
+import { ProductService } from '@/application/product/product.service';
 import { GetPopularProductsResponseDto } from '@/presentation/http/product/dto/popular-products-response.dto';
 import { GetProductDetailResponseDto } from '@/presentation/http/product/dto/product-response.dto';
 import { GetProductStockResponseDto } from '@/presentation/http/product/dto/product-stock-response.dto';
@@ -13,29 +14,26 @@ import {
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly productRankingService: ProductRankingService,
+  ) {}
 
   @Get('popular')
   @ApiGetPopularProducts()
-  async getPopularProducts(
-    @Query('days') days: string,
-    @Query('limit') limit: string,
-  ): Promise<GetPopularProductsResponseDto> {
-    // TODO Step6 고도화 예정
-    const daysNum = parseInt(days, 10) || 3;
+  async getPopularProducts(@Query('limit') limit: string): Promise<GetPopularProductsResponseDto> {
     const limitNum = parseInt(limit, 10) || 5;
-
-    const products = await this.productService.getPopularProducts(daysNum, limitNum);
+    const products = await this.productRankingService.getTopRankings(new Date(), limitNum);
 
     return {
       products: products.map((p) => ({
-        id: p.getId(),
-        name: p.getName(),
-        description: p.getDescription(),
-        price: p.getPrice(),
+        id: p.getProductId(),
+        name: p.getProduct().getProductName(),
+        description: p.getProduct().getDescription(),
+        price: p.getProduct().getBasePrice(),
       })),
       period: {
-        days: daysNum,
+        days: 3,
       },
     };
   }
@@ -43,21 +41,22 @@ export class ProductsController {
   @Get(':id')
   @ApiGetProductDetail()
   async getProductDetail(@Param('id') id: string): Promise<GetProductDetailResponseDto> {
-    const productWithOptions = await this.productService.getProductWithOptions(id);
+    const productId = parseInt(id, 10);
+    const productWithOptions = await this.productService.getProductWithOptions(productId);
     const product = productWithOptions.getProduct();
     const options = productWithOptions.getOptions();
 
     return {
       product: {
-        id: product.getId(),
-        name: product.getName(),
+        id: product.getProductId(),
+        name: product.getProductName(),
         description: product.getDescription(),
-        price: product.getPrice(),
+        price: product.getBasePrice(),
         options: options.map((opt) => ({
-          id: opt.getId(),
+          id: opt.getProductOptionId(),
           productId: opt.getProductId(),
-          name: opt.getName(),
-          additionalPrice: opt.getAdditionalPrice(),
+          name: opt.getOptionName(),
+          sku: opt.getSku(),
           stock: opt.getStock(),
         })),
       },
@@ -70,12 +69,14 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('optionId') optionId: string,
   ): Promise<GetProductStockResponseDto> {
-    const option = await this.productService.getOptionStock(id, optionId);
+    const productId = parseInt(id, 10);
+    const optionIdNum = parseInt(optionId, 10);
+    const option = await this.productService.getOptionStock(productId, optionIdNum);
 
     return {
-      optionId: option.getId(),
+      optionId: String(option.getProductOptionId()),
       productId: option.getProductId(),
-      name: option.getName(),
+      name: option.getOptionName(),
       stock: option.getStock(),
       isAvailable: option.getStock() > 0,
     };
