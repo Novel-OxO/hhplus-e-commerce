@@ -9,23 +9,13 @@ import { Product } from './product.entity';
 export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
 
 export interface ProductRepository {
-  findById(productId: number): Promise<Product | null>;
-
   findByIdOrElseThrow(productId: number): Promise<Product>;
 
   findWithOptionsByProductIdOrElseThrow(productId: number): Promise<ProductWithOptions>;
 
-  findOptionById(optionId: string): Promise<ProductOption | null>;
-
   findOptionByIdOrElseThrow(optionId: number): Promise<ProductOption>;
 
   findOptionByOptionIdAndProductIdOrElseThrow(optionId: number, productId: number): Promise<ProductOption>;
-
-  saveOption(option: ProductOption): Promise<ProductOption>;
-
-  findOptionByIdWithLock(optionId: string): Promise<ProductOption | null>;
-
-  findOptionsByIds(optionIds: string[]): Promise<ProductOption[]>;
 
   findDetailsByOptionIds(optionIds: string[]): Promise<ProductDetail[]>;
 

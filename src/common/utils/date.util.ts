@@ -31,3 +31,17 @@ export function getDateDaysAgo(days: number): Date {
   date.setDate(date.getDate() - days);
   return date;
 }
+
+/**
+ * 날짜를 UTC 기준으로 날짜만 추출하여 정규화합니다.
+ * 시간 정보를 제거하고 날짜 부분만 UTC로 변환합니다.
+ *
+ * @param date 정규화할 날짜
+ * @returns UTC 기준으로 정규화된 날짜 객체 (시간은 00:00:00)
+ *
+ * @example
+ * normalizeToDateOnly(new Date('2024-01-05T15:30:00')) // 2024-01-05T00:00:00.000Z
+ */
+export function normalizeToDateOnly(date: Date): Date {
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+}

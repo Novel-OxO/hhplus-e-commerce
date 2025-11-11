@@ -1,7 +1,9 @@
+import { Injectable } from '@nestjs/common';
 import { ProductRanking } from './product-ranking.entity';
 import { ProductViewCount } from './product-view-count.vo';
 import { Product } from './product.entity';
 
+@Injectable()
 export class ProductRankingAggregator {
   aggregate(viewCounts: ProductViewCount[], products: Product[], targetDate: Date): ProductRanking[] {
     const sortedViewCounts = [...viewCounts].sort((a, b) => a.compareByViewCount(b));
