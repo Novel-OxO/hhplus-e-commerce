@@ -1,17 +1,17 @@
 export class GetBalanceResponseDto {
-  userId: string;
+  userId: number;
   balance: number;
 }
 
 export class ChargeRequestResponseDto {
-  chargeRequestId: string;
+  chargeRequestId: number;
   amount: number;
   status: string;
   createdAt: string;
 }
 
 export class VerifyChargeResponseDto {
-  chargeRequestId: string;
+  chargeRequestId: number;
   status: string;
   amount: number;
   previousBalance: number;
