@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Transactional } from '@/common/decorators/transactional.decorator';
 import { BadRequestException } from '@/common/exceptions';
 import { Coupon } from '@/domain/coupon/coupon.entity';
 import { COUPON_REPOSITORY, type CouponRepository } from '@/domain/coupon/coupon.repository';
@@ -13,6 +14,7 @@ export class CouponService {
     private readonly couponRepository: CouponRepository,
   ) {}
 
+  @Transactional()
   async issueCoupon(couponId: number, userId: number, issuedAt: Date = new Date()): Promise<UserCoupon> {
     const exists = await this.couponRepository.existsUserCouponByCouponIdAndUserId(couponId, userId);
     if (exists) {

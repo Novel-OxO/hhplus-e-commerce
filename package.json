@@ -103,7 +103,9 @@
       "^@presentation/(.*)$": "<rootDir>/src/presentation/$1",
       "^@application/(.*)$": "<rootDir>/src/application/$1",
       "^@test/(.*)$": "<rootDir>/test/$1"
-    }
+    },
+    "globalSetup": "<rootDir>/test/jest-global-setup.ts",
+    "globalTeardown": "<rootDir>/test/jest-global-teardown.ts"
   },
   "lint-staged": {
     "*.ts": [

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import configuration from '@/common/config/configuration';
 import { validationSchema } from '@/common/config/env.validation';
+import { TransactionModule } from '@/common/transaction/transaction.module';
 import { CartsModule } from './carts.module';
 import { CouponsModule } from './coupons.module';
 import { OrdersModule } from './orders.module';
@@ -21,6 +22,7 @@ const internalModules = [PointsModule, CouponsModule, ProductsModule, CartsModul
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     PrismaModule,
+    TransactionModule,
     ScheduleModule.forRoot(),
     ...internalModules,
   ],

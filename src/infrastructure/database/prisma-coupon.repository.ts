@@ -261,7 +261,8 @@ export class PrismaCouponRepository implements CouponRepository {
       });
     }
   }
-
+  // TODO 린트 룰 로 인해  AI에게 작성시켜 코드 더러워짐
+  // 고민후 변경 예정
   private toCoupon(coupon: {
     couponId: bigint;
     couponName: string;

@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import configuration from '@/common/config/configuration';
 import { validationSchema } from '@/common/config/env.validation';
 import { HttpExceptionFilter } from '@/common/exceptions/http-exception.filter';
+import { TransactionModule } from '@/common/transaction/transaction.module';
 import { PrismaModule } from '@/infrastructure/di/prisma.module';
 
 export class TestAppBuilder {
@@ -25,6 +26,7 @@ export class TestAppBuilder {
         envFilePath: `.env.${process.env.NODE_ENV || 'test'}`,
       }),
       PrismaModule,
+      TransactionModule,
       ScheduleModule.forRoot(),
       ...this.modules,
     ];
