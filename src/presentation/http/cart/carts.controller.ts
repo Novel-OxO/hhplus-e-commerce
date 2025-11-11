@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CartService } from '@/application/cart/cart.service';
+import { ProductQuantity } from '@/domain/product/product-quantity.vo';
 import { ApiAddCartItem, ApiGetCart, ApiDeleteCartItem, ApiClearCart } from '@/presentation/http/cart/carts.swagger';
 import { AddCartItemRequestDto, AddCartItemResponseDto } from '@/presentation/http/cart/dto/add-cart-item.dto';
 import { ClearCartResponseDto } from '@/presentation/http/cart/dto/clear-cart.dto';
@@ -15,16 +16,19 @@ export class CartsController {
   @Post('items')
   @ApiAddCartItem()
   async addCartItem(@Body() body: AddCartItemRequestDto): Promise<AddCartItemResponseDto> {
-    const { cartItem, currentStock } = await this.cartService.addCartItem(
+    const cartItem = await this.cartService.addCartItem(
       body.userId,
       body.productOptionId,
-      body.quantity,
+      ProductQuantity.from(body.quantity),
     );
 
+    const productOption = cartItem.getProductOption();
+    const currentStock = productOption.getStock();
+
     return {
-      cartItemId: cartItem.getCartItemId(),
-      productOptionId: cartItem.getProductOptionId(),
-      quantity: cartItem.getQuantity(),
+      cartItemId: cartItem.getCartItemId() ?? 0,
+      productOptionId: productOption.getProductOptionId(),
+      quantity: cartItem.getQuantity().getValue(),
       currentStock,
       createdAt: cartItem.getCreatedAt(),
     };
@@ -34,18 +38,29 @@ export class CartsController {
   @ApiGetCart()
   async getCart(@Query('userId') userId: string): Promise<GetCartResponseDto> {
     const numericUserId = parseInt(userId, 10);
-    const { items, totalAmount } = await this.cartService.getCart(numericUserId);
+    const cart = await this.cartService.getCart(numericUserId);
+
+    const items = cart.getItems();
+    const totalAmount = cart.calculateTotalAmount();
 
     return {
-      items: items.map((item) => ({
-        cartItemId: item.cartItem.getCartItemId(),
-        productOptionId: item.cartItem.getProductOptionId(),
-        quantity: item.cartItem.getQuantity(),
-        currentPrice: item.currentPrice,
-        currentStock: item.currentStock,
-        isStockSufficient: item.isStockSufficient,
-        subtotal: item.currentPrice * item.cartItem.getQuantity(),
-      })),
+      items: items.map((cartItem) => {
+        const productOption = cartItem.getProductOption();
+        const currentPrice = cartItem.getPrice();
+        const currentStock = productOption.getStock();
+        const quantity = cartItem.getQuantity().getValue();
+        const isStockSufficient = currentStock >= quantity;
+
+        return {
+          cartItemId: cartItem.getCartItemId() ?? 0,
+          productOptionId: productOption.getProductOptionId(),
+          quantity,
+          currentPrice,
+          currentStock,
+          isStockSufficient,
+          subtotal: currentPrice * quantity,
+        };
+      }),
       totalAmount,
       totalItems: items.length,
     };
