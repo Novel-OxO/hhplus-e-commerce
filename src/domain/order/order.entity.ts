@@ -1,110 +1,120 @@
-import { BadRequestException } from '@/common/exceptions';
+import { UserCoupon } from '@/domain/coupon/user-coupon.entity';
 import { Point } from '@/domain/point/point.vo';
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from './order-status.vo';
+import type { ProductDetail } from '@/domain/product/product-detail.vo';
 
 export class Order {
-  private status: OrderStatus;
-  private completedAt: Date | null;
-  private cancelledAt: Date | null;
+  private constructor(
+    public userId: number,
+    public userCouponId: number | null,
+    public orderStatus: OrderStatus,
+    public totalPrice: number,
+    public discountPrice: number,
+    public finalPrice: number,
+    public createdAt: Date,
+    public updatedAt: Date,
+    public completedAt: Date | null,
+    public cancelledAt: Date | null,
+    private items: OrderItem[],
+    public orderId?: number,
+  ) {}
 
-  constructor(
-    private readonly id: string,
-    private readonly userId: string,
-    private readonly items: OrderItem[],
-    private readonly totalPrice: Point,
-    private readonly discountPrice: Point,
-    private readonly finalPrice: Point,
-    private readonly userCouponId: string | null,
-    private readonly createdAt: Date,
-    status?: OrderStatus,
-    completedAt: Date | null = null,
-    cancelledAt: Date | null = null,
-  ) {
-    if (items.length === 0) {
-      throw new BadRequestException('주문 항목이 없습니다.');
-    }
+  static create(params: {
+    userId: number;
+    productDetails: Array<{ detail: ProductDetail; quantity: number }>;
+    userCoupon?: UserCoupon | null;
+  }): Order {
+    params.productDetails.forEach(({ detail, quantity }) => {
+      detail.decreaseStock(quantity);
+    });
 
-    this.status = status ?? OrderStatus.PENDING;
-    this.completedAt = completedAt;
-    this.cancelledAt = cancelledAt;
+    const totalPrice = params.productDetails.reduce(
+      (sum, { detail, quantity }) => sum + detail.getPrice() * quantity,
+      0,
+    );
+
+    const discountPrice = params.userCoupon
+      ? params.userCoupon.getCoupon().calculateDiscount(new Point(totalPrice)).getValue()
+      : 0;
+
+    const finalPrice = totalPrice - discountPrice;
+
+    const now = new Date();
+
+    // OrderItem 생성 (orderId는 0으로 설정, DB 저장 시 실제 orderId로 교체됨)
+    const orderItems = params.productDetails.map(({ detail, quantity }) =>
+      OrderItem.create({
+        orderId: 0,
+        productOptionId: detail.getProductOptionId(),
+        productName: detail.getProductName(),
+        optionName: detail.getOptionName(),
+        sku: detail.getSku(),
+        quantity,
+        price: detail.getPrice(),
+      }),
+    );
+
+    return new Order(
+      params.userId,
+      params.userCoupon ? (params.userCoupon.getId() as number) : null,
+      OrderStatus.PENDING,
+      totalPrice,
+      discountPrice,
+      finalPrice,
+      now,
+      now,
+      null,
+      null,
+      orderItems,
+    );
   }
 
-  validateAmount(expectedAmount: Point): void {
-    if (!this.finalPrice.equals(expectedAmount)) {
-      throw new BadRequestException(
-        `주문 금액이 일치하지 않습니다. 예상: ${expectedAmount.getValue()}, 실제: ${this.finalPrice.getValue()}`,
-      );
-    }
+  isPending(): boolean {
+    return this.orderStatus === OrderStatus.PENDING;
   }
 
-  complete(): void {
-    if (!this.status.isPending()) {
-      throw new BadRequestException('대기 중인 주문만 완료할 수 있습니다.');
-    }
-
-    this.status = OrderStatus.COMPLETED;
-    this.completedAt = new Date();
+  isCompleted(): boolean {
+    return this.orderStatus === OrderStatus.COMPLETED;
   }
 
-  cancel(): void {
-    if (this.status.isCompleted()) {
-      throw new BadRequestException('완료된 주문은 취소할 수 없습니다.');
-    }
-
-    if (this.status.isCancelled()) {
-      throw new BadRequestException('이미 취소된 주문입니다.');
-    }
-
-    this.status = OrderStatus.CANCELLED;
-    this.cancelledAt = new Date();
+  isCancelled(): boolean {
+    return this.orderStatus === OrderStatus.CANCELLED;
   }
 
   hasCoupon(): boolean {
     return this.userCouponId !== null;
   }
 
-  getId(): string {
-    return this.id;
+  hasDiscount(): boolean {
+    return this.discountPrice > 0;
   }
 
-  getUserId(): string {
+  getId(): number | undefined {
+    return this.orderId;
+  }
+
+  getUserId(): number {
     return this.userId;
   }
 
-  getItems(): OrderItem[] {
-    return [...this.items];
-  }
-
-  getTotalPrice(): Point {
-    return this.totalPrice;
-  }
-
-  getDiscountPrice(): Point {
-    return this.discountPrice;
-  }
-
-  getFinalPrice(): Point {
-    return this.finalPrice;
-  }
-
-  getUserCouponId(): string | null {
+  getUserCouponId(): number | null {
     return this.userCouponId;
   }
 
-  getStatus(): OrderStatus {
-    return this.status;
+  getFinalPrice(): number {
+    return this.finalPrice;
   }
 
-  getCreatedAt(): Date {
-    return this.createdAt;
+  getTotalPrice(): number {
+    return this.totalPrice;
   }
 
-  getCompletedAt(): Date | null {
-    return this.completedAt;
+  getDiscountPrice(): number {
+    return this.discountPrice;
   }
 
-  getCancelledAt(): Date | null {
-    return this.cancelledAt;
+  getItems(): OrderItem[] {
+    return this.items;
   }
 }

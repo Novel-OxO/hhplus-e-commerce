@@ -1,26 +1,24 @@
+import { Product } from './product.entity';
+
 export class ProductRanking {
-  private productId: string;
+  private product: Product;
   private totalViews: number;
   private rankingPosition: number;
-  private periodDays: number;
   private calculatedAt: Date;
 
-  constructor(
-    productId: string,
-    totalViews: number,
-    rankingPosition: number,
-    periodDays: number,
-    calculatedAt: Date = new Date(),
-  ) {
-    this.productId = productId;
+  constructor(product: Product, totalViews: number, rankingPosition: number, calculatedAt: Date = new Date()) {
+    this.product = product;
     this.totalViews = totalViews;
     this.rankingPosition = rankingPosition;
-    this.periodDays = periodDays;
     this.calculatedAt = calculatedAt;
   }
 
-  getProductId(): string {
-    return this.productId;
+  getProduct(): Product {
+    return this.product;
+  }
+
+  getProductId(): number {
+    return this.product.getProductId();
   }
 
   getTotalViews(): number {
@@ -29,10 +27,6 @@ export class ProductRanking {
 
   getRankingPosition(): number {
     return this.rankingPosition;
-  }
-
-  getPeriodDays(): number {
-    return this.periodDays;
   }
 
   getCalculatedAt(): Date {

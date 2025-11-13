@@ -1,38 +1,33 @@
-import { ProductDailyView } from './product-daily-view.entity';
+import { ProductDetail } from './product-detail.vo';
 import { ProductOption } from './product-option.entity';
 import { ProductRanking } from './product-ranking.entity';
+import { ProductViewCount } from './product-view-count.vo';
 import { ProductViewLog } from './product-view-log.entity';
+import { ProductWithOptions } from './product-with-options.vo';
 import { Product } from './product.entity';
 
 export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
 
 export interface ProductRepository {
-  findById(productId: number): Promise<Product | null>;
+  findByIdOrElseThrow(productId: number): Promise<Product>;
 
-  findOptionsByProductId(productId: number): Promise<ProductOption[]>;
+  findWithOptionsByProductIdOrElseThrow(productId: number): Promise<ProductWithOptions>;
 
-  findOptionById(optionId: string): Promise<ProductOption | null>;
+  findOptionByIdOrElseThrow(optionId: number): Promise<ProductOption>;
 
-  findPopularByPeriod(days: number, limit: number): Promise<Product[]>;
+  findOptionByOptionIdAndProductIdOrElseThrow(optionId: number, productId: number): Promise<ProductOption>;
 
-  saveProduct(product: Product): Promise<Product>;
-
-  saveOption(option: ProductOption): Promise<ProductOption>;
-
-  findOptionByIdWithLock(optionId: string): Promise<ProductOption | null>;
+  findDetailsByOptionIds(optionIds: string[]): Promise<ProductDetail[]>;
 
   // 조회수 관련 메서드
   saveViewLog(viewLog: ProductViewLog): Promise<ProductViewLog>;
 
-  findOrCreateDailyView(productId: string, viewDate: string): Promise<ProductDailyView>;
-
-  saveDailyView(dailyView: ProductDailyView): Promise<ProductDailyView>;
-
-  findDailyViewsByPeriod(productId: string, startDate: string, endDate: string): Promise<ProductDailyView[]>;
-
-  findAllDailyViewsByPeriod(startDate: string, endDate: string): Promise<ProductDailyView[]>;
-
   saveRanking(ranking: ProductRanking): Promise<ProductRanking>;
 
-  findTopRankings(periodDays: number, limit: number): Promise<ProductRanking[]>;
+  // 랭킹 계산용 메서드
+  aggregateViewsForDate(targetDate: Date): Promise<Array<ProductViewCount>>;
+
+  findRankingsByDate(targetDate: Date, limit: number): Promise<ProductRanking[]>;
+
+  findProductsByIds(productIds: number[]): Promise<Product[]>;
 }

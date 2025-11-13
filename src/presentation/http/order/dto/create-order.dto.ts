@@ -6,7 +6,6 @@ export class CreateOrderItemDto {
 export class CreateOrderRequestDto {
   userId: string;
   items: CreateOrderItemDto[];
-  expectedAmount: number;
   userCouponId?: string;
 }
 
@@ -18,8 +17,6 @@ export class CreateOrderResponseDto {
   discountAmount: number;
   finalAmount: number;
   pointsUsed: number;
-  coupon: CouponInfoDto | null;
-  pointBalance: PointBalanceDto;
   createdAt: Date;
 }
 

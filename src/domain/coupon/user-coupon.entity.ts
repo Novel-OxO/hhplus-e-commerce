@@ -1,22 +1,27 @@
-import { Point } from '@/domain/point/point.vo';
-import { ValidityPeriod } from './validity-period.vo';
 import { BadRequestException } from '@/common/exceptions';
+import { Point } from '@/domain/point/point.vo';
+import { Coupon } from './coupon.entity';
+import { ValidityPeriod } from './validity-period.vo';
 
 export class UserCoupon {
   private usedAt: Date | null;
-  private orderId: string | null;
+  private orderId: number | null;
 
   constructor(
-    private readonly id: string,
-    private readonly userId: string,
-    private readonly couponId: string,
+    private readonly userId: number,
+    private readonly coupon: Coupon,
     private readonly issuedAt: Date,
     private readonly validityPeriod: ValidityPeriod,
     usedAt: Date | null = null,
-    orderId: string | null = null,
+    orderId: number | null = null,
+    private readonly id?: number,
   ) {
     this.usedAt = usedAt;
     this.orderId = orderId;
+  }
+
+  static create(userId: number, coupon: Coupon, validityPeriod: ValidityPeriod, issuedAt: Date = new Date()) {
+    return new UserCoupon(userId, coupon, issuedAt, validityPeriod);
   }
 
   isUsed(): boolean {
@@ -43,7 +48,7 @@ export class UserCoupon {
     return true;
   }
 
-  use(orderId: string): void {
+  use(orderId: number): void {
     if (this.isUsed()) {
       throw new BadRequestException('이미 사용된 쿠폰입니다.');
     }
@@ -71,16 +76,16 @@ export class UserCoupon {
     this.orderId = null;
   }
 
-  getId(): string {
+  getId(): number | undefined {
     return this.id;
   }
 
-  getUserId(): string {
+  getUserId(): number {
     return this.userId;
   }
 
-  getCouponId(): string {
-    return this.couponId;
+  getCoupon(): Coupon {
+    return this.coupon;
   }
 
   getIssuedAt(): Date {
@@ -95,7 +100,7 @@ export class UserCoupon {
     return this.usedAt;
   }
 
-  getOrderId(): string | null {
+  getOrderId(): number | null {
     return this.orderId;
   }
 }

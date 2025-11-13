@@ -8,7 +8,6 @@ export class Coupon {
   private quantity: CouponQuantity;
 
   constructor(
-    private readonly id: string,
     private readonly name: string,
     private readonly discountValue: DiscountValue,
     private readonly maxDiscountAmount: Point | null,
@@ -17,6 +16,7 @@ export class Coupon {
     private readonly validityPeriod: ValidityPeriod,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
+    private readonly id?: number,
   ) {
     this.quantity = quantity;
   }
@@ -25,9 +25,8 @@ export class Coupon {
     return this.isValidPeriod(at) && this.quantity.canIssue();
   }
 
-  issue(): void {
-    const now = new Date();
-    if (!this.canIssue(now)) {
+  issue(issuedAt: Date = new Date()): void {
+    if (!this.canIssue(issuedAt)) {
       throw new BadRequestException('쿠폰을 발급할 수 없습니다.');
     }
 
@@ -48,7 +47,7 @@ export class Coupon {
     return discount;
   }
 
-  getId(): string {
+  getId(): number | undefined {
     return this.id;
   }
 

@@ -6,6 +6,7 @@ export class ProductOption {
     private readonly productId: number,
     private readonly optionName: string,
     private readonly sku: string,
+    private readonly price: number,
     private stock: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
@@ -47,6 +48,10 @@ export class ProductOption {
 
   getStock(): number {
     return this.stock;
+  }
+
+  getPrice(): number {
+    return this.price;
   }
 
   getCreatedAt(): Date {

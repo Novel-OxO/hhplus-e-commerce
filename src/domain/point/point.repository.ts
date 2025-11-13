@@ -6,15 +6,19 @@ import { PointTransaction } from './point-transaction.entity';
 export const POINT_REPOSITORY = Symbol('PointRepository');
 
 export interface PointRepository {
-  findBalanceByUserId(userId: string): Promise<PointBalance | null>;
+  findBalanceByUserId(userId: number): Promise<PointBalance | null>;
+
+  findBalanceByUserIdOrElseThrow(userId: number): Promise<PointBalance>;
 
   saveBalance(balance: PointBalance): Promise<PointBalance>;
 
   saveChargeRequest(chargeRequest: PointChargeRequest): Promise<PointChargeRequest>;
 
-  findChargeRequestById(chargeRequestId: string): Promise<PointChargeRequest | null>;
+  findChargeRequestById(chargeRequestId: number): Promise<PointChargeRequest | null>;
+
+  findChargeRequestByIdOrElseThrow(chargeRequestId: number): Promise<PointChargeRequest>;
 
   createTransaction(transaction: PointTransaction): Promise<PointTransaction>;
 
-  updateChargeRequestStatus(chargeRequestId: string, status: ChargeStatus): Promise<PointChargeRequest>;
+  updateChargeRequestStatus(chargeRequestId: number, status: ChargeStatus): Promise<PointChargeRequest>;
 }

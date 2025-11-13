@@ -1,22 +1,41 @@
+import { ProductOption } from '@/domain/product/product-option.entity';
+import { ProductQuantity } from '@/domain/product/product-quantity.vo';
+
 export class CartItem {
   constructor(
-    private readonly cartItemId: number,
     private readonly userId: number,
-    private readonly productOptionId: number,
-    private quantity: number,
+    private readonly productOption: ProductOption,
+    private quantity: ProductQuantity,
+    private readonly price: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
+    private cartItemId?: number,
   ) {}
 
-  increaseQuantity(amount: number): void {
-    this.quantity += amount;
+  static create(
+    userId: number,
+    productOption: ProductOption,
+    quantity: ProductQuantity,
+    price: number,
+    createdAt: Date = new Date(),
+    updatedAt: Date = new Date(),
+  ) {
+    return new CartItem(userId, productOption, quantity, price, createdAt, updatedAt, undefined);
   }
 
-  calculateSubtotal(currentPrice: number): number {
-    return currentPrice * this.quantity;
+  increaseQuantity(amount: ProductQuantity): void {
+    this.quantity = this.quantity.increase(amount.getValue());
   }
 
-  getCartItemId(): number {
+  calculateSubtotal(): number {
+    return this.price * this.quantity.getValue();
+  }
+
+  getPrice(): number {
+    return this.price;
+  }
+
+  getCartItemId(): number | undefined {
     return this.cartItemId;
   }
 
@@ -24,11 +43,11 @@ export class CartItem {
     return this.userId;
   }
 
-  getProductOptionId(): number {
-    return this.productOptionId;
+  getProductOption(): ProductOption {
+    return this.productOption;
   }
 
-  getQuantity(): number {
+  getQuantity(): ProductQuantity {
     return this.quantity;
   }
 

@@ -1,6 +1,6 @@
+import { BadRequestException } from '@/common/exceptions';
 import { ChargeStatus } from './charge-status.vo';
 import { Point } from './point.vo';
-import { BadRequestException } from '@/common/exceptions';
 
 export class PointChargeRequest {
   private static readonly MIN_CHARGE = 1_000;
@@ -10,25 +10,25 @@ export class PointChargeRequest {
   private completedAt: Date | null;
 
   constructor(
-    private readonly chargeRequestId: string,
-    private readonly userId: string,
+    private readonly userId: number,
     private readonly amount: Point,
     private readonly createdAt: Date,
     status?: ChargeStatus,
     completedAt?: Date | null,
+    private readonly chargeRequestId?: number,
   ) {
     this.status = status ?? ChargeStatus.PENDING;
     this.completedAt = completedAt ?? null;
   }
 
-  static create(chargeRequestId: string, userId: string, amount: Point): PointChargeRequest {
+  static create(userId: number, amount: Point): PointChargeRequest {
     if (!amount.isBetween(PointChargeRequest.MIN_CHARGE, PointChargeRequest.MAX_CHARGE)) {
       throw new BadRequestException(
         `충전 금액은 ${PointChargeRequest.MIN_CHARGE.toLocaleString()}원 ~ ${PointChargeRequest.MAX_CHARGE.toLocaleString()}원 사이여야 합니다.`,
       );
     }
 
-    return new PointChargeRequest(chargeRequestId, userId, amount, new Date(), ChargeStatus.PENDING, null);
+    return new PointChargeRequest(userId, amount, new Date(), ChargeStatus.PENDING, null, undefined);
   }
 
   complete(): void {
@@ -49,11 +49,11 @@ export class PointChargeRequest {
     this.completedAt = new Date();
   }
 
-  getChargeRequestId(): string {
+  getChargeRequestId(): number | undefined {
     return this.chargeRequestId;
   }
 
-  getUserId(): string {
+  getUserId(): number {
     return this.userId;
   }
 

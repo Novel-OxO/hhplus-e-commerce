@@ -9,4 +9,5 @@ export interface CartRepository {
   save(cartItem: CartItem): Promise<CartItem>;
   delete(cartItemId: number): Promise<void>;
   deleteByUserId(userId: number): Promise<void>;
+  deleteByCartIdAndUserId(cartItemId: number, userId: number): Promise<void>;
 }

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { CouponService } from '@/application/coupon.service';
-import { OrderService } from '@/application/order.service';
+import { CouponService } from '@/application/coupon/coupon.service';
+import { OrderService } from '@/application/order/order.service';
+import { OrderContextBuilder } from '@/domain/order/order-context.builder';
+import { OrderFulfillmentService } from '@/domain/order/order-fulfillment.service';
 import { ORDER_REPOSITORY } from '@/domain/order/order.repository';
 import { PRODUCT_REPOSITORY } from '@/domain/product/product.repository';
 // import { CartMemoryRepository } from '@/infrastructure/database/cart-memory.repository';
@@ -16,6 +18,8 @@ import { PointsModule } from './points.module';
   providers: [
     OrderService,
     CouponService,
+    OrderFulfillmentService,
+    OrderContextBuilder,
     // {
     //   provide: ORDER_REPOSITORY,
     //   useClass: OrderMemoryRepository,

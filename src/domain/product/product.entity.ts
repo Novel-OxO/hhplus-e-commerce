@@ -4,7 +4,6 @@ export class Product {
     private readonly productName: string,
     private readonly description: string,
     private readonly basePrice: number,
-    private viewCount: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
   ) {}
@@ -25,19 +24,11 @@ export class Product {
     return this.basePrice;
   }
 
-  getViewCount(): number {
-    return this.viewCount;
-  }
-
   getCreatedAt(): Date {
     return this.createdAt;
   }
 
   getUpdatedAt(): Date {
     return this.updatedAt;
-  }
-
-  incrementViewCount(): void {
-    this.viewCount++;
   }
 }

@@ -33,13 +33,13 @@ model Product {
   productName String   @map("product_name") @db.VarChar(200)
   description String  @db.Text
   basePrice   Decimal  @map("base_price") @db.Decimal(10, 2)
-  viewCount   BigInt   @default(0) @map("view_count")
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
   // Relations
   productOptions  ProductOption[]
   productRankings ProductRanking[]
+  productViewLogs ProductViewLog[]
 
   @@map("products")
 }
@@ -63,27 +63,43 @@ model ProductOption {
   @@map("product_options")
 }
 
-// 4. 상품 랭킹 (최근 3일 조회수 기반)
-model ProductRanking {
-  rankingId BigInt   @id @default(autoincrement()) @map("ranking_id")
-  productId BigInt   @map("product_id")
-  ranking   Int
-  viewCount BigInt   @map("view_count")
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+// 4. 상품 조회 로그
+model ProductViewLog {
+  logId      BigInt   @id @default(autoincrement()) @map("log_id")
+  productId  BigInt   @map("product_id")
+  userId     BigInt?  @map("user_id")
+  viewedAt   DateTime @default(now()) @map("viewed_at") @db.DateTime(3)
 
   // Relations
   product Product @relation(fields: [productId], references: [productId])
 
   @@index([productId])
+  @@index([viewedAt])
+  @@map("product_view_logs")
+}
+
+// 5. 상품 랭킹 (일별 집계)
+model ProductRanking {
+  productId        BigInt   @map("product_id")
+  totalViews       BigInt   @map("total_views")
+  rankingPosition  Int      @map("ranking_position")
+  calculatedAt     DateTime @map("calculated_at") @db.Date
+
+  // Relations
+  product Product @relation(fields: [productId], references: [productId])
+
+  @@id([productId, calculatedAt])
+  @@index([calculatedAt])
   @@map("product_rankings")
 }
 
-// 5. 장바구니
+// 6. 장바구니
 model CartItem {
   cartItemId      BigInt   @id @default(autoincrement()) @map("cart_item_id")
   userId          BigInt   @map("user_id")
   productOptionId BigInt   @map("product_option_id")
   quantity        Int      @default(1)
+  price           Decimal  @db.Decimal(10, 2)
   createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
@@ -96,7 +112,7 @@ model CartItem {
   @@map("cart_items")
 }
 
-// 6. 쿠폰
+// 7. 쿠폰
 model Coupon {
   couponId          BigInt       @id @default(autoincrement()) @map("coupon_id")
   couponName        String       @map("coupon_name") @db.VarChar(200)
@@ -117,7 +133,7 @@ model Coupon {
   @@map("coupons")
 }
 
-// 7. 사용자 쿠폰
+// 8. 사용자 쿠폰
 model UserCoupon {
   userCouponId BigInt    @id @default(autoincrement()) @map("user_coupon_id")
   userId       BigInt    @map("user_id")
@@ -139,7 +155,7 @@ model UserCoupon {
   @@map("user_coupons")
 }
 
-// 8. 주문
+// 9. 주문
 model Order {
   orderId       BigInt      @id @default(autoincrement()) @map("order_id")
   userId        BigInt      @map("user_id")
@@ -163,7 +179,7 @@ model Order {
   @@map("orders")
 }
 
-// 9. 주문 아이템 (스냅샷)
+// 10. 주문 아이템 (스냅샷)
 model OrderItem {
   orderItemId     BigInt   @id @default(autoincrement()) @map("order_item_id")
   orderId         BigInt   @map("order_id")
@@ -185,7 +201,7 @@ model OrderItem {
   @@map("order_items")
 }
 
-// 10. 쿠폰 사용 내역
+// 11. 쿠폰 사용 내역
 model CouponUsageHistory {
   usageId       BigInt            @id @default(autoincrement()) @map("usage_id")
   userCouponId  BigInt            @map("user_coupon_id")
@@ -203,7 +219,7 @@ model CouponUsageHistory {
   @@map("coupon_usage_history")
 }
 
-// 11. 포인트 잔액
+// 12. 포인트 잔액
 model PointBalance {
   userId    BigInt   @id @map("user_id")
   balance   Decimal  @db.Decimal(10, 2)
@@ -215,7 +231,7 @@ model PointBalance {
   @@map("point_balances")
 }
 
-// 12. 포인트 충전 요청
+// 13. 포인트 충전 요청
 model PointChargeRequest {
   chargeRequestId BigInt              @id @default(autoincrement()) @map("charge_request_id")
   userId          BigInt              @map("user_id")
@@ -232,7 +248,7 @@ model PointChargeRequest {
   @@map("point_charge_requests")
 }
 
-// 13. PG 결제 정보 (포인트 충전용)
+// 14. PG 결제 정보 (포인트 충전용)
 model Payment {
   paymentId       BigInt        @id @default(autoincrement()) @map("payment_id")
   chargeRequestId BigInt        @map("charge_request_id")
@@ -250,7 +266,7 @@ model Payment {
   @@map("payments")
 }
 
-// 14. 포인트 거래 내역
+// 15. 포인트 거래 내역
 model PointTransaction {
   transactionId   BigInt          @id @default(autoincrement()) @map("transaction_id")
   userId          BigInt          @map("user_id")

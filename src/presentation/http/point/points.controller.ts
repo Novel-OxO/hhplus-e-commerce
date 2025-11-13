@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PointService } from '@/application/point.service';
+import { PointService } from '@/application/point/point.service';
 import { Point } from '@/domain/point/point.vo';
 import { ApiChargeRequest, ApiGetBalance, ApiVerifyCharge } from '@/presentation/http/point/points.swagger';
 
@@ -11,7 +11,7 @@ export class PointsController {
 
   @Get('balance')
   @ApiGetBalance()
-  async getBalance(@Query('userId') userId: string) {
+  async getBalance(@Query('userId') userId: number) {
     const pointBalance = await this.pointService.getBalance(userId);
     return {
       userId: pointBalance.getUserId(),
@@ -21,7 +21,7 @@ export class PointsController {
 
   @Post('charge')
   @ApiChargeRequest()
-  async chargeRequest(@Body() body: { userId: string; amount: number }) {
+  async chargeRequest(@Body() body: { userId: number; amount: number }) {
     const point = new Point(body.amount);
     const chargeRequest = await this.pointService.createChargeRequest(body.userId, point);
 
@@ -35,7 +35,7 @@ export class PointsController {
 
   @Post('charge/verify')
   @ApiVerifyCharge()
-  async verifyCharge(@Body() body: { paymentId: string; chargeRequestId: string }) {
+  async verifyCharge(@Body() body: { paymentId: string; chargeRequestId: number }) {
     const result = await this.pointService.verifyAndCompleteCharge(body.chargeRequestId, body.paymentId);
 
     return {

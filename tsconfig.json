@@ -21,6 +21,7 @@
       "@infrastructure/*": ["src/infrastructure/*"],
       "@presentation/*": ["src/presentation/*"],
       "@application/*": ["src/application/*"],
+      "@test/*": ["test/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -29,5 +30,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": ["src/**/*", "test/**/*"]
 }

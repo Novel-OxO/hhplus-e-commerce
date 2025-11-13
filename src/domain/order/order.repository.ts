@@ -8,6 +8,7 @@ export interface OrderRepository {
   findById(orderId: string): Promise<Order | null>;
   findByUserId(userId: string): Promise<Order[]>;
   findByIdWithLock(orderId: string): Promise<Order | null>;
+  findByIdAndUserIdOrElseThrow(orderId: string, userId: string): Promise<Order>;
   saveItems(items: OrderItem[]): Promise<void>;
   findItemsByOrderId(orderId: string): Promise<OrderItem[]>;
 }

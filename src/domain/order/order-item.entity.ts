@@ -2,31 +2,63 @@ import { Point } from '@/domain/point/point.vo';
 
 export class OrderItem {
   constructor(
-    private readonly id: string,
-    private readonly orderId: string,
-    private readonly productOptionId: string,
-    private readonly productName: string,
-    private readonly optionName: string,
-    private readonly sku: string,
-    private readonly quantity: number,
-    private readonly price: Point,
-    private readonly subtotal: Point,
+    private orderId: number,
+    private productOptionId: number,
+    private productName: string,
+    private optionName: string,
+    private sku: string,
+    private quantity: number,
+    private price: Point,
+    private subtotal: Point,
+    private id?: number,
   ) {}
+
+  static create(params: {
+    orderId: number;
+    productOptionId: number;
+    productName: string;
+    optionName: string;
+    sku: string;
+    quantity: number;
+    price: number;
+  }): OrderItem {
+    if (params.quantity <= 0) {
+      throw new Error('수량은 1 이상이어야 합니다');
+    }
+
+    if (params.price < 0) {
+      throw new Error('가격은 0 이상이어야 합니다');
+    }
+
+    const price = new Point(params.price);
+    const subtotal = new Point(params.price * params.quantity);
+
+    return new OrderItem(
+      params.orderId,
+      params.productOptionId,
+      params.productName,
+      params.optionName,
+      params.sku,
+      params.quantity,
+      price,
+      subtotal,
+    );
+  }
 
   validateSubtotal(): boolean {
     const expectedSubtotal = this.price.multiply(this.quantity);
     return this.subtotal.equals(expectedSubtotal);
   }
 
-  getId(): string {
+  getId(): number | undefined {
     return this.id;
   }
 
-  getOrderId(): string {
+  getOrderId(): number {
     return this.orderId;
   }
 
-  getProductOptionId(): string {
+  getProductOptionId(): number {
     return this.productOptionId;
   }
 
