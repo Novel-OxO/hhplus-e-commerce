@@ -34,7 +34,15 @@ export class CouponService {
     await this.couponRepository.saveCoupon(coupon);
     await this.couponRepository.saveUserCoupon(userCoupon);
 
-    return userCoupon;
+    // 저장된 UserCoupon의 ID를 얻기 위해 다시 조회
+    const savedUserCoupon = await this.couponRepository.findUserCouponsByUserId(userId);
+    const issuedUserCoupon = savedUserCoupon.find((uc) => uc.getCoupon().getId() === couponId && !uc.isUsed());
+
+    if (!issuedUserCoupon) {
+      throw new Error('쿠폰 발급 후 조회에 실패했습니다.');
+    }
+
+    return issuedUserCoupon;
   }
 
   async getMyCouponsWithStatistics(userId: number, at: Date = new Date()): Promise<UserCouponStatistics> {

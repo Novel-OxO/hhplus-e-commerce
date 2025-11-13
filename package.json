@@ -21,7 +21,9 @@
     "prepare": "husky",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "seed:init": "ts-node -r tsconfig-paths/register script/init-data.ts",
+    "seed:large": "ts-node -r tsconfig-paths/register script/generate-test-data.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
