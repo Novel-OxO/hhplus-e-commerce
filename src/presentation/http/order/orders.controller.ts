@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OrderService } from '@/application/order/order.service';
 import { CreateOrderRequestDto, CreateOrderResponseDto } from '@/presentation/http/order/dto/create-order.dto';
@@ -13,11 +13,14 @@ export class OrdersController {
   @Post()
   @ApiCreateOrder()
   async createOrder(@Body() body: CreateOrderRequestDto): Promise<CreateOrderResponseDto> {
-    const order = await this.orderService.createOrder(
-      Number(body.userId),
-      body.items,
-      body.userCouponId ? Number(body.userCouponId) : undefined,
-    );
+    const userCouponId =
+      body.userCouponId && body.userCouponId.trim() !== '' ? parseInt(body.userCouponId, 10) : undefined;
+
+    if (userCouponId !== undefined && isNaN(userCouponId)) {
+      throw new Error(`Invalid userCouponId: ${body.userCouponId}`);
+    }
+
+    const order = await this.orderService.createOrder(Number(body.userId), body.items, userCouponId);
 
     return {
       orderId: order.getId()?.toString() ?? '',
@@ -38,8 +41,8 @@ export class OrdersController {
 
   @Get(':orderId')
   @ApiGetOrder()
-  async getOrder(@Param('orderId') orderId: string, @Body() body: { userId: string }): Promise<GetOrderResponseDto> {
-    const order = await this.orderService.getOrder(body.userId, orderId);
+  async getOrder(@Param('orderId') orderId: string, @Query('userId') userId: string): Promise<GetOrderResponseDto> {
+    const order = await this.orderService.getOrder(userId, orderId);
 
     return {
       orderId: order.getId()?.toString() ?? '',

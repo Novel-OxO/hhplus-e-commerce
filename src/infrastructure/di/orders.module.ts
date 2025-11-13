@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { CouponService } from '@/application/coupon/coupon.service';
 import { OrderService } from '@/application/order/order.service';
+import { CART_REPOSITORY } from '@/domain/cart/cart.repository';
+import { COUPON_REPOSITORY } from '@/domain/coupon/coupon.repository';
 import { OrderContextBuilder } from '@/domain/order/order-context.builder';
 import { OrderFulfillmentService } from '@/domain/order/order-fulfillment.service';
 import { ORDER_REPOSITORY } from '@/domain/order/order.repository';
 import { PRODUCT_REPOSITORY } from '@/domain/product/product.repository';
-// import { CartMemoryRepository } from '@/infrastructure/database/cart-memory.repository';
-// import { CouponMemoryRepository } from '@/infrastructure/database/coupon-memory.repository';
-// import { OrderMemoryRepository } from '@/infrastructure/database/order-memory.repository';
-// import { ProductMemoryRepository } from '@/infrastructure/database/product-memory.repository';
+import { PrismaCartRepository } from '@/infrastructure/database/prisma-cart.repository';
+import { PrismaCouponRepository } from '@/infrastructure/database/prisma-coupon.repository';
+import { PrismaOrderRepository } from '@/infrastructure/database/prisma-order.repository';
+import { PrismaProductRepository } from '@/infrastructure/database/prisma-product.repository';
 import { OrdersController } from '@/presentation/http/order/orders.controller';
 import { PointsModule } from './points.module';
 
@@ -20,22 +22,22 @@ import { PointsModule } from './points.module';
     CouponService,
     OrderFulfillmentService,
     OrderContextBuilder,
-    // {
-    //   provide: ORDER_REPOSITORY,
-    //   useClass: OrderMemoryRepository,
-    // },
-    // {
-    //   provide: PRODUCT_REPOSITORY,
-    //   useClass: ProductMemoryRepository,
-    // },
-    // {
-    //   provide: COUPON_REPOSITORY,
-    //   useClass: CouponMemoryRepository,
-    // },
-    // {
-    //   provide: CART_REPOSITORY,
-    //   useClass: CartMemoryRepository,
-    // },
+    {
+      provide: ORDER_REPOSITORY,
+      useClass: PrismaOrderRepository,
+    },
+    {
+      provide: PRODUCT_REPOSITORY,
+      useClass: PrismaProductRepository,
+    },
+    {
+      provide: COUPON_REPOSITORY,
+      useClass: PrismaCouponRepository,
+    },
+    {
+      provide: CART_REPOSITORY,
+      useClass: PrismaCartRepository,
+    },
   ],
   exports: [ORDER_REPOSITORY, OrderService, PRODUCT_REPOSITORY],
 })

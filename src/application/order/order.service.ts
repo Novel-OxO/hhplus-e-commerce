@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Transactional } from '@/common/decorators/transactional.decorator';
 import { OrderContextBuilder } from '@/domain/order/order-context.builder';
 import { OrderFulfillmentService } from '@/domain/order/order-fulfillment.service';
 import { Order } from '@/domain/order/order.entity';
@@ -13,7 +14,8 @@ export class OrderService {
     private readonly orderContextBuilder: OrderContextBuilder,
     private readonly orderFulfillmentService: OrderFulfillmentService,
   ) {}
-  // TODO Transaction 처리
+
+  @Transactional()
   async createOrder(userId: number, items: CreateOrderItemDto[], userCouponId?: number): Promise<Order> {
     const orderContext = await this.orderContextBuilder.buildOrderContext(userId, items, userCouponId);
 
@@ -24,9 +26,9 @@ export class OrderService {
       pointBalance: orderContext.pointBalance,
     });
 
-    await this.orderContextBuilder.persistOrderResult(userId, orderResult);
+    const savedOrder = await this.orderContextBuilder.persistOrderResult(userId, orderResult);
 
-    return orderResult.order;
+    return savedOrder;
   }
 
   async getOrder(userId: string, orderId: string): Promise<Order> {

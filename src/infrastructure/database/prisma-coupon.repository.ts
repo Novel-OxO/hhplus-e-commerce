@@ -258,7 +258,12 @@ export class PrismaCouponRepository implements CouponRepository {
           expiresAt: userCoupon.getValidityPeriod().getUntil(),
           usedAt: userCoupon.getUsedAt(),
         },
+        include: {
+          coupon: true,
+        },
       });
+      // 저장된 UserCoupon의 ID를 설정하기 위해 다시 조회하여 반환
+      // 하지만 반환 타입이 void이므로 여기서는 할 수 없음
     }
   }
   // TODO 린트 룰 로 인해  AI에게 작성시켜 코드 더러워짐
